@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /studio/
+Disallow: /generate_resume
+Disallow: /export/
+Allow: /
+
+Sitemap: https://buildmyairesume.com/sitemap.xml

@@ -1,0 +1,37 @@
+Phase 1: Domain & Legal Setup
+[✅ ] Purchase a Domain: Buy your official domain name (e.g., via Cloudflare, Namecheap, or Google Domains).
+
+[✅ ] Set up Custom Email: Create a professional email address (like support@yourdomain.com). Tip: Zoho Mail has a free tier for custom domains.
+
+[✅] Update Privacy Policy: Open templates/privacy.html and replace any placeholder emails, domain names, or company names with your official details.
+
+[✅ ] Update Terms of Service: Open templates/terms.html and update the placeholders with your official details.
+
+Phase 2: SEO & Search Visibility
+[✅ ] Create an OG Image: Design a 1200x630px promotional image of your app, name it social-preview.jpg, and put it in your static/ folder.
+
+[ ] Add Open Graph Tags: Paste <meta property="og:image" content="https://yourdomain.com/static/social-preview.jpg"> into the <head> of index.html, form.html, and studio.html.
+
+[✅ ] Create robots.txt: Create a new file named robots.txt in your main folder. Set it to allow search engines but disallow them from indexing private resume generation endpoints (like /generate_resume).
+
+[✅] Create sitemap.xml: Create a new file named sitemap.xml that lists your public pages (/, /form, /terms, /privacy).
+
+[ ] Register with Google: Once the site is live, add your domain to Google Search Console and submit your sitemap.xml so Google crawls your site immediately.
+
+Phase 3: Security & Integrations
+[✅] Update Cloudflare Turnstile: Log into your Cloudflare dashboard and add your new live domain name to the Turnstile site key settings. If you skip this, the CAPTCHA on form.html will block real users.
+
+[✅] Hide Environment Variables: Ensure your .env file (containing your OpenAI and Flask keys) is completely ignored by Git/GitHub. Never upload this file publicly.
+
+Phase 4: Server & Deployment
+[ ] Choose a Playwright-Friendly Host: Select a hosting provider that supports background Chromium browsers. (Render.com, Railway.app, or a DigitalOcean Droplet are highly recommended).
+
+[ ] Check requirements.txt: Ensure all your necessary Python libraries (Flask, Playwright, Requests, etc.) are accurately listed in requirements.txt.txt.
+
+[ ] Add Gunicorn: Ensure gunicorn is in your requirements.txt.txt. You cannot use app.run() in production.
+
+[ ] Set Startup Command: Configure your host's startup command to run the production server: gunicorn app:app -w 2 --threads 2 --timeout 120
+
+[ ] Inject Secrets: Copy the values from your local .env file and paste them directly into your hosting dashboard's "Environment Variables" or "Secrets" section.
+
+[ ] Enforce HTTPS: Verify that your hosting provider automatically forces all traffic to use https://.

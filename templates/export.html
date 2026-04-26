@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Export Resume</title>
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--ink:#0f172a;--accent:#0ea5e9;}
+    html,body{height:100%;margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);}
+    .wrap{max-width:920px;margin:40px auto;padding:0 16px;}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.08);padding:22px;}
+    h1{margin:0 0 10px;font-size:22px}
+    p{margin:0;color:#475569}
+    .row{display:flex;gap:14px;margin-top:18px;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:12px 14px;border-radius:12px;text-decoration:none;font-weight:700;
+      background:#111827;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.18);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.22)}
+    .btn-outline{background:#fff;color:#0f172a;border:2px solid #0f172a}
+    .frame{margin-top:24px;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb}
+    iframe{width:100%;height:75vh;border:0;display:block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Export your resume</h1>
+      <p>Choose how you want to export. The <strong>PDF</strong> option renders server-side and preserves colors.</p>
+      <div class="row">
+        <a class="btn" href="/export/{{ export_id }}/pdf">⬇ Download PDF (color)</a>
+        <a class="btn btn-outline" href="/export/{{ export_id }}/print" target="_blank">🖨 Open Print View</a>
+      </div>
+    </div>
+
+    <div class="frame">
+      <iframe src="/render/{{ export_id }}" title="Preview"></iframe>
+    </div>
+  </div>
+
+  <!-- BEGIN: allow parent editor to receive the styled HTML -->
+<script>
+(function () {
+  // choose the main container of the printable resume
+  function getResumeRoot() {
+    return document.querySelector('#sheet') ||
+           document.querySelector('.page') ||
+           document.querySelector('main') ||
+           document.body;
+  }
+
+  function sendToParent() {
+    try {
+      var root = getResumeRoot();
+      var html = root ? root.innerHTML : '';
+      // ship it to the parent editor
+      window.parent.postMessage({ type: 'RESUME_HTML', html: html }, '*');
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  // 1) send automatically when the preview loads
+  window.addEventListener('load', function () {
+    // small delay to ensure your JS pagination has run
+    setTimeout(sendToParent, 80);
+  });
+
+  // 2) respond if the parent explicitly asks for it later
+  window.addEventListener('message', function (ev) {
+    var data = ev && ev.data || {};
+    if (data && data.type === 'REQUEST_RESUME_HTML') {
+      sendToParent();
+    }
+  });
+})();
+</script>
+<!-- END: allow parent editor to receive the styled HTML -->
+
+</body>
+</html>

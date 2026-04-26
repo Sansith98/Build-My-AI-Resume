@@ -1,0 +1,1038 @@
+{
+  "name": "New Custom Layout",
+  "slug": "custom-layout",
+  "version": 2,
+  "pageSize": {
+    "width": 794,
+    "height": 1123
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "elements": [
+        {
+          "id": "full_name",
+          "type": "text",
+          "bind": "contact.full_name",
+          "page": 1,
+          "x": 50,
+          "y": 45,
+          "width": 676,
+          "height": 60,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 42,
+            "fontWeight": 900,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true
+          }
+        },
+        {
+          "id": "current_title",
+          "type": "text",
+          "bind": "contact.current_title",
+          "page": 1,
+          "x": 52,
+          "y": 95,
+          "width": 500,
+          "height": 30,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 16,
+            "fontWeight": 600,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true
+          }
+        },
+        {
+          "id": "icon_phone",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 49,
+          "y": 130,
+          "width": 16,
+          "height": 16,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/phone.svg"
+        },
+        {
+          "id": "contact_phone",
+          "type": "text",
+          "bind": "contact.phone",
+          "page": 1,
+          "x": 71,
+          "y": 128,
+          "width": 150,
+          "height": 24,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.phone"
+          }
+        },
+        {
+          "id": "icon_email",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 306,
+          "y": 131,
+          "width": 14,
+          "height": 14,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/email.svg"
+        },
+        {
+          "id": "contact_email",
+          "type": "text",
+          "bind": "contact.email",
+          "page": 1,
+          "x": 326,
+          "y": 128,
+          "width": 150,
+          "height": 24,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.email"
+          }
+        },
+        {
+          "id": "icon_address",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 550,
+          "y": 131,
+          "width": 14,
+          "height": 14,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/location.svg"
+        },
+        {
+          "id": "contact_address",
+          "type": "text",
+          "bind": "contact.address",
+          "page": 1,
+          "x": 570,
+          "y": 128,
+          "width": 172,
+          "height": 43,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left",
+            "lineHeight": 1.4
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.address"
+          }
+        },
+        {
+          "id": "icon_linkedin",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 49,
+          "y": 156,
+          "width": 14,
+          "height": 14,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/linkedin.svg"
+        },
+        {
+          "id": "contact_linkedin",
+          "type": "text",
+          "bind": "contact.linkedin",
+          "page": 1,
+          "x": 69,
+          "y": 153,
+          "width": 150,
+          "height": 36,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.linkedin"
+          }
+        },
+        {
+          "id": "icon_portfolio",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 306,
+          "y": 155,
+          "width": 16,
+          "height": 16,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/portfolio.svg"
+        },
+        {
+          "id": "contact_portfolio",
+          "type": "text",
+          "bind": "contact.portfolio",
+          "page": 1,
+          "x": 328,
+          "y": 153,
+          "width": 150,
+          "height": 24,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.portfolio"
+          }
+        },
+        {
+          "id": "icon_github",
+          "type": "image",
+          "bind": null,
+          "page": 1,
+          "x": 551,
+          "y": 156,
+          "width": 14,
+          "height": 14,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "borderWidth": 0,
+            "borderColor": "#111827",
+            "borderRadius": 0,
+            "color": "#111827"
+          },
+          "options": {},
+          "src": "http://127.0.0.1:5000/templates/SVG/github.svg"
+        },
+        {
+          "id": "contact_github",
+          "type": "text",
+          "bind": "contact.github",
+          "page": 1,
+          "x": 571,
+          "y": 153,
+          "width": 159,
+          "height": 24,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "left"
+          },
+          "options": {
+            "wrap": true,
+            "hideIfEmpty": "contact.github"
+          }
+        },
+        {
+          "id": "header_line",
+          "type": "shape",
+          "bind": null,
+          "page": 1,
+          "x": 50,
+          "y": 190,
+          "width": 694,
+          "height": 2,
+          "z": 2,
+          "style": {
+            "opacity": 1,
+            "stroke": "#111827",
+            "strokeWidth": 2
+          },
+          "options": {
+            "shape": "line",
+            "direction": "h"
+          }
+        },
+        {
+          "id": "summary_heading",
+          "type": "text",
+          "bind": null,
+          "page": 1,
+          "x": 50,
+          "y": 210,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "PROFILE",
+            "hideIfEmpty": "profile",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "profile_body",
+          "type": "text",
+          "bind": "profile",
+          "page": 1,
+          "x": 50,
+          "y": 245,
+          "width": 694,
+          "height": 124,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "profile",
+            "wrap": true
+          }
+        },
+        {
+          "id": "skills_heading",
+          "type": "text",
+          "bind": null,
+          "page": 1,
+          "x": 50,
+          "y": 366,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "CORE SKILLS",
+            "hideIfEmpty": "skillsText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "skills_names",
+          "type": "text",
+          "bind": "skillsText|skills",
+          "page": 1,
+          "x": 57,
+          "y": 403,
+          "width": 570,
+          "height": 254,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 600,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start",
+            "lineHeight": 2.2
+          },
+          "options": {
+            "hideIfEmpty": "skillsText",
+            "wrap": true
+          }
+        },
+        {
+          "id": "skills_dots",
+          "type": "text",
+          "bind": "skillsDots",
+          "page": 1,
+          "x": 174,
+          "y": 403,
+          "width": 466,
+          "height": 254,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "right",
+            "lineHeight": 2.2
+          },
+          "options": {
+            "hideIfEmpty": "skillsText",
+            "wrap": true,
+            "html": true,
+            "indicator": {
+              "mode": "bars",
+              "barSplits": false,
+              "inactiveColor": "#d9dbdd",
+              "twoColumn": true,
+              "twoColGap": 350,
+              "twoColTextGap": 200,
+              "dots": {
+                "scale": 1,
+                "vGap": 8,
+                "hGap": 4,
+                "shape": "circle"
+              },
+              "bars": {
+                "scale": 1.06,
+                "scale2": 1.86,
+                "vGap": 8
+              }
+            },
+            "bullets": false
+          }
+        },
+        {
+          "id": "experience_heading",
+          "type": "text",
+          "bind": null,
+          "page": 1,
+          "x": 52,
+          "y": 675,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "WORK EXPERIENCE",
+            "hideIfEmpty": "experienceText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "experience_block",
+          "type": "text",
+          "bind": "experienceText",
+          "page": 1,
+          "x": 49,
+          "y": 716,
+          "width": 694,
+          "height": 386,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "experienceText",
+            "wrap": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "page-2",
+      "elements": [
+        {
+          "id": "education_heading",
+          "type": "text",
+          "bind": null,
+          "page": 2,
+          "x": 50,
+          "y": 22,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "EDUCATION",
+            "hideIfEmpty": "educationText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "education_block",
+          "type": "text",
+          "bind": "educationText",
+          "page": 2,
+          "x": 50,
+          "y": 54,
+          "width": 694,
+          "height": 461,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "educationText",
+            "wrap": true
+          }
+        },
+        {
+          "id": "secondary_heading",
+          "type": "text",
+          "bind": null,
+          "page": 2,
+          "x": 50,
+          "y": 722,
+          "width": 275,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "SECONDARY EDUCATION",
+            "hideIfEmpty": "secondaryText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 211
+          }
+        },
+        {
+          "id": "secondary_block",
+          "type": "text",
+          "bind": "secondaryText",
+          "page": 2,
+          "x": 50,
+          "y": 758,
+          "width": 278,
+          "height": 367,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "secondaryText",
+            "wrap": true
+          }
+        },
+        {
+          "id": "certifications_heading",
+          "type": "text",
+          "bind": null,
+          "page": 2,
+          "x": 397,
+          "y": 722,
+          "width": 275,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "CERTIFICATIONS",
+            "hideIfEmpty": "certificationsText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 218
+          }
+        },
+        {
+          "id": "publications_heading",
+          "type": "text",
+          "bind": null,
+          "page": 2,
+          "x": 50,
+          "y": 505,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "PUBLICATIONS",
+            "hideIfEmpty": "publicationsText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "certifications_block",
+          "type": "text",
+          "bind": "certificationsText",
+          "page": 2,
+          "x": 397,
+          "y": 788,
+          "width": 372,
+          "height": 255,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "certificationsText",
+            "wrap": true
+          }
+        },
+        {
+          "id": "publications_block",
+          "type": "text",
+          "bind": "publicationsText",
+          "page": 2,
+          "x": 50,
+          "y": 537,
+          "width": 694,
+          "height": 180,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "publicationsText",
+            "wrap": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "page-3",
+      "elements": [
+        {
+          "id": "achievements_block",
+          "type": "text",
+          "bind": "achievements",
+          "page": 3,
+          "x": 50,
+          "y": 80,
+          "width": 694,
+          "height": 68,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "achievements",
+            "wrap": true,
+            "bullets": true
+          }
+        },
+        {
+          "id": "sports_heading",
+          "type": "text",
+          "bind": null,
+          "page": 3,
+          "x": 50,
+          "y": 219,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "EXTRACURRICULAR",
+            "hideIfEmpty": "sports",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "sports_block",
+          "type": "text",
+          "bind": "sports",
+          "page": 3,
+          "x": 50,
+          "y": 248,
+          "width": 694,
+          "height": 68,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "sports",
+            "wrap": true,
+            "bullets": true
+          }
+        },
+        {
+          "id": "extras_titles",
+          "type": "text",
+          "bind": "extrasText",
+          "page": 3,
+          "x": 50,
+          "y": 393,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "ADDITIONAL DETAILS",
+            "hideIfEmpty": "extrasText",
+            "wrap": true,
+            "titleGap": 14,
+            "itemGap": 88,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "extras_descriptions",
+          "type": "text",
+          "bind": "extrasText",
+          "page": 3,
+          "x": 50,
+          "y": 436,
+          "width": 694,
+          "height": 49,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "staticText": "• Organized IIT Discovery Day 2024 registration desk\n• Mentor: Arduino basics for school students",
+            "hideIfEmpty": "extrasText",
+            "wrap": true,
+            "bullets": true
+          }
+        },
+        {
+          "id": "referees_heading",
+          "type": "text",
+          "bind": null,
+          "page": 3,
+          "x": 50,
+          "y": 751,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "REFERENCES",
+            "hideIfEmpty": "refereesText",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        },
+        {
+          "id": "referees_block",
+          "type": "text",
+          "bind": "refereesText",
+          "page": 3,
+          "x": 50,
+          "y": 797,
+          "width": 694,
+          "height": 180,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Lato, sans-serif",
+            "fontSize": 11,
+            "fontWeight": 400,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#4b5563",
+            "align": "start",
+            "lineHeight": 1.7
+          },
+          "options": {
+            "hideIfEmpty": "refereesText",
+            "wrap": true
+          }
+        },
+        {
+          "id": "achievements_heading",
+          "type": "text",
+          "bind": null,
+          "page": 3,
+          "x": 50,
+          "y": 42,
+          "width": 694,
+          "height": 29,
+          "z": 5,
+          "style": {
+            "opacity": 1,
+            "fontFamily": "Playfair Display, serif",
+            "fontSize": 15,
+            "fontWeight": 800,
+            "fontStyle": "normal",
+            "textDecoration": "none",
+            "color": "#111827",
+            "align": "start"
+          },
+          "options": {
+            "staticText": "AWARDS & HONORS",
+            "hideIfEmpty": "achievements",
+            "wrap": true,
+            "showTitleLine": true,
+            "lineColor": "#d1d5db",
+            "lineHeight": 1,
+            "lineWidth": 694
+          }
+        }
+      ]
+    },
+    {
+      "id": "newly add page",
+      "elements": []
+    }
+  ]
+}

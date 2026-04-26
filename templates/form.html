@@ -1,0 +1,3667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- ✅ CORRECT — they should be separate -->
+<title>Enter Details | BuildMyAIresume</title>
+
+<script>
+  // Check memory immediately and apply dark theme
+  if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+
+  function toggleDarkMode() {
+    if (document.documentElement.getAttribute('data-theme') === 'dark') {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    }
+  }
+</script>
+
+<style>
+  :root{
+    --brand:#2563eb;            /* indigo-600 */
+    --brand-strong:#1e40af;     /* indigo-800 */
+    --ok:#28a745;
+    --ok-strong:#1e8a38;
+    --danger:#ff3b30;
+    --danger-strong:#d13028;
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --bg:#f3f4f6;
+    --card:#fff;
+    --chip:#eef2ff;
+  }
+
+  html,body{ height:100%; }
+  body {
+    margin:0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: var(--bg);
+    padding: 20px 20px 110px;
+    text-align:center;
+    color: var(--ink);
+  }
+
+/* 🚀 NEW: form-header-card CSS replacing the old Logo */
+  .form-header-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    margin: 30px auto 10px auto;
+    max-width: 95%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap; 
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  .form-header-content { flex: 1 1 500px; }
+  .form-header-content h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--brand-strong);
+    margin: 0 0 10px 0;
+  }
+  .form-header-content p {
+    font-size: 1rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.6;
+  }
+  .form-header-template { flex: 0 0 auto; text-align: right; }
+  .form-header-template label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .template-pill {
+    display: inline-block;
+    background: #eef2ff;
+    color: var(--brand);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid #c7d2fe;
+    text-align: center;
+  }
+
+/* Card - Widened to utilize screen space */
+  form {
+    max-width: 95%;      /* Form now takes up 95% of screen width */
+    margin: 30px auto;   /* Reduced top/bottom margin */
+    background: var(--card);
+    padding: 30px;       /* Slightly more internal padding */
+    border-radius: 12px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    text-align: left;
+  }
+
+  /* Layout */
+  .form-row { display:flex; gap:20px; margin-bottom:30px; flex-wrap:wrap; }
+  .form-section { flex: 1 1 48%; min-width: 320px; box-sizing: border-box; }
+  @media (max-width: 700px) { .form-row { flex-direction: column; } .form-section { flex:1 1 100%; min-width:auto; } }
+
+  /* Headings */
+  h1 { margin: 20px 0 10px; font-size: 26px; }
+  h2 { margin-top: 0; font-weight: 700; border-bottom: 2px solid var(--brand); padding-bottom: 6px; margin-bottom: 15px; display:flex; align-items:center; gap:8px; }
+  h2 .count { background: var(--chip); color: var(--brand-strong); border-radius: 8px; padding: 2px 8px; font-size:.9rem; }
+  h3 { margin: 0 0 8px; }
+
+  /* Inputs */
+  label { display:block; margin-bottom:6px; font-weight:600; }
+  input, textarea, select { width:100%; padding:10px 12px; margin-bottom:15px; border-radius:8px; border:1px solid #d1d5db; font-size:1rem; box-sizing:border-box; }
+  textarea{ resize: vertical; }
+
+/* Buttons */
+  button, input[type="button"] {
+    background-color: var(--brand);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 5px;
+  }
+  button:hover, input[type="button"]:hover { background-color: var(--brand-strong); }
+  
+  /* 🚀 FIX: Increased specificity so the Red always overrides the Blue */
+  button.remove-btn, input[type="button"].remove-btn { background: var(--danger); color: white; }
+  button.remove-btn:hover, input[type="button"].remove-btn:hover { background: var(--danger-strong); }
+
+  .ghost-btn { background: #fff; color: var(--brand); border:1px solid var(--brand); }
+  .ghost-btn:hover { background: #eef2ff; }
+
+  /* Helpers */
+  .muted { color: var(--muted); font-size: .9rem; margin-top: -8px; margin-bottom: 12px; }
+  .help { font-size:.9rem; color:var(--muted); margin-top:-10px; margin-bottom:12px; }
+  .chip { display:inline-block; background: var(--chip); color: var(--brand-strong); padding: 2px 8px; border-radius: 999px; font-size:.85rem; }
+  .badge{display:inline-block;background:#eef6ff;border:1px solid #cfe3ff;color:#174e7a;padding:4px 8px;border-radius:999px;font-size:12px;margin-left:8px}
+  .cre-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:-8px 0 10px}
+
+  /* Blocks */
+  .edu-block, .extra-entry { border:1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; background:#fafafa; position:relative; }
+  .edu-inline { display:flex; gap:10px; }
+  .edu-inline > * { flex:1; }
+  .edu-actions { display:flex; gap:10px; }
+  .drag-handle { position:absolute; right: 12px; top: 12px; opacity:.55; font-size:18px; cursor:grab; user-select:none; }
+  .row { display:flex; gap:10px; }
+  .row > * { flex:1; }
+
+  dialog { border: none; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.2); padding: 20px; width: min(680px, 92vw); }
+  dialog::backdrop{ background: rgba(0,0,0,.4); }
+  .dialog-actions { display:flex; gap:10px; justify-content:flex-end; margin-top: 12px; }
+
+  /* Toggle pills */
+  .pill-row{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 6px}
+  .toggle{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .toggle input.visually-hidden{position:absolute;opacity:0;pointer-events:none}
+  .toggle .switch{position:relative;width:46px;height:26px;background:#dde7ff;border-radius:999px;box-shadow:inset 0 0 0 1px #c7d7ff;transition:.25s}
+  .toggle .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.25s}
+  .toggle input:checked + .switch{background:var(--brand)}
+  .toggle input:checked + .switch::after{transform:translateX(20px)}
+  .toggle .label{background:#eef6ff;border:1px solid #d8e7ff;color:#174e7a;padding:8px 12px;border-radius:999px;font-weight:600}
+
+  /* Read-only template display */
+  .readonly-pill {
+    background:#f9fafb;
+    border:1px dashed #cbd5e1;
+    color:#334155;
+    padding:10px 12px;
+    border-radius:10px;
+    font-weight:600;
+  }
+
+  /* Subject/grade rows (O/L & A/L) */
+/* Single-line rows (O/L, A/L) made to look like uniform cards */
+  .subject-result-row{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:12px;
+    flex-wrap:nowrap;
+    background: #fafafa;
+    border: 1px solid var(--line);
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+  .subject-result-row input[type="text"]{
+    flex:1 1 0;     
+    min-width:0;    
+    padding:12px 14px;
+    font-size:1rem;
+    margin-bottom:0;
+    border: 1px solid #d1d5db;
+  }
+  .subject-result-row select{
+    flex:0 0 140px; 
+    min-width:0;
+    padding:11px 12px;
+    font-size:1rem;
+    margin-bottom:0;
+  }
+  .subject-result-row .remove-btn{
+    flex:0 0 110px; 
+    width:auto;
+    padding:10px 14px;
+    margin:0;
+    border-radius:8px;
+  }
+    /* ===== Content Mode (above Creativity) ===== */
+  .content-mode{
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 10px; /* space before Creativity */
+  }
+
+  .content-mode-option{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: #f5f6f8;
+    color: #333;
+    transition: background .15s ease, box-shadow .15s ease;
+
+    white-space: nowrap;
+    width: fit-content;
+
+    line-height: 1;          /* ✅ fixes text vertical alignment */
+  }
+
+
+
+  .content-mode-option input{
+    accent-color: #8b3fd1;
+    cursor: pointer;
+
+    margin: 0;              /* remove default offset */
+    transform: translateY(1px); /* fine vertical alignment */
+  }
+
+
+  .content-mode-option:hover{
+    background: #eceef3;
+  }
+
+  .content-mode-option input:checked + span{
+    font-weight: 600;
+  }
+  /* ===== Disabled Job Target (Only enabled for AI Enhanced + Job-specific) ===== */
+  /* ===== Disabled Job Target ===== */
+  .job-target-disabled{
+    opacity: 0.45;
+    filter: grayscale(1);
+    /* NOTE: do NOT block pointer events.
+       We control field usability via .disabled in JS so whyFit can remain active. */
+  }
+
+
+  /* When Original Content is selected, WhyFit remains editable and should not look disabled */
+  .job-target-disabled .keep-active{
+    opacity: 1 !important;
+    filter: none !important;
+  }
+
+  /* Optional: also make the textarea itself look fully active */
+  .job-target-disabled .keep-active textarea,
+  .job-target-disabled .keep-active input{
+    background: #fff !important;
+    color: inherit !important;
+  }
+
+
+
+
+  /* ===== Resume Targeting (below Content Mode) ===== */
+  .resume-target{
+    margin-bottom: 10px; /* space before Creativity section */
+  }
+
+  .resume-target-label{
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+    margin: 0 0 6px 2px;
+  }
+
+  .resume-target-options{
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    flex-wrap: wrap; /* safe on small screens */
+  }
+
+
+  @media (max-width: 560px){
+    .subject-result-row{ flex-wrap:wrap; }
+    .subject-result-row input[type="text"]{ flex:1 1 100%; min-width:100%; }
+    .subject-result-row select{ flex:1 1 48%; }
+    .subject-result-row .remove-btn{ flex:1 1 48%; text-align:center; }
+  }
+
+/* ==== Skills row: uniform card styling & fluid responsive layout ==== */
+  #skills-section #skills-list .skill-row{
+    display:flex !important;
+    flex-wrap: wrap;
+    align-items:center;
+    gap:15px;
+    background: #fafafa;
+    border: 1px solid var(--line);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  #skills-section .skill-name{
+    flex: 1 1 200px;
+    padding:12px 14px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    font-size:1rem;
+    margin-bottom: 0 !important;
+  }
+
+  #skills-section .skill-level{
+    flex: 2 1 200px;
+    display:block;
+    height:12px;
+    border-radius:999px;
+    background:#e5e7eb;
+    outline:none;
+    cursor:pointer;
+  }
+
+  /* filled track (webkit) */
+  #skills-section .skill-level::-webkit-slider-runnable-track{
+    height:12px; border-radius:999px;
+    background: linear-gradient(to right, #3b82f6 0 var(--pct,50)%,
+                                          #e5e7eb var(--pct,50)% 100%);
+  }
+  #skills-section .skill-level::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:18px; height:18px; border-radius:50%;
+    background:#0f172a; border:3px solid #fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.2), 0 0 0 3px rgba(59,130,246,.25);
+    margin-top:-3px; cursor:pointer;
+    transition: box-shadow .12s ease, transform .12s ease;
+  }
+
+  /* firefox */
+  #skills-section .skill-level::-moz-range-track{
+    height:12px; border-radius:999px; background:#e5e7eb;
+  }
+  #skills-section .skill-level::-moz-range-progress{
+    height:12px; border-radius:999px; background:#3b82f6;
+  }
+  #skills-section .skill-level::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%;
+    background:#0f172a; border:3px solid #fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.2), 0 0 0 3px rgba(59,130,246,.25);
+    cursor:pointer;
+  }
+
+  #skills-section .skill-level-badge{
+    flex: 0 0 135px;
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px;
+    border:1px solid #cbd5e1; border-radius:8px;
+    font-size:.9rem; white-space:nowrap;
+    font-variant-numeric: tabular-nums;
+    background: #fff;
+    margin-bottom: 0;
+  }
+  
+  #skills-section .remove-btn{
+    flex: 0 0 auto;
+    width: auto; min-width: 0;
+    padding:10px 14px;
+    background: var(--danger); color:#fff; border:none; border-radius:8px;
+    white-space:nowrap; cursor:pointer; margin: 0;
+  }
+  #skills-section .remove-btn:hover {
+    background: var(--danger-strong);
+  }
+
+
+  /* =========================================
+     DESKTOP ACTION BAR STYLING
+     ========================================= */
+  .action-buttons {
+    margin-top: 35px;
+    background: #ffffff;
+    padding: 20px 25px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+  }
+  .action-row {
+    display: flex;
+    gap: 12px;
+    flex: 1 1 auto;
+  }
+  .right-actions { justify-content: flex-end; }
+  .action-buttons button, .action-buttons input[type="button"] {
+    width: auto; margin: 0; padding: 12px 24px;
+  }
+
+  /* =========================================
+     📱 MOBILE RESPONSIVENESS FIXES
+     ========================================= */
+  @media (max-width: 800px) {
+    /* 1. Un-stick the action strip so it never blocks the keyboard */
+    .action-buttons {
+      position: relative !important;
+      bottom: auto !important;
+      flex-direction: column-reverse; /* Preview button moves to the top */
+      padding: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      border: none !important;
+      margin-top: 25px;
+    }
+
+    /* 2. Stack the buttons neatly */
+    .action-row {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    /* Make buttons massive and easy to tap */
+    .action-buttons button, .action-buttons input[type="button"] {
+      width: 100% !important;
+      padding: 16px !important;
+    }
+
+    /* 3. Fix squished Date fields (Month/Year) */
+    .edu-inline {
+      flex-direction: column;
+      gap: 12px;
+    }
+    /* Keep the inner month/year side-by-side, but stack From/To */
+    .edu-inline .edu-inline {
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    /* 4. Fix wrapping on basic layout elements */
+    .content-mode { flex-wrap: wrap; }
+    form { padding: 20px 15px !important; }
+  }
+
+  /* =========================================
+     DYNAMIC PREVIEW BUTTON STATES
+     ========================================= */
+  #previewBtn { 
+    transition: background-color 0.3s, box-shadow 0.3s, color 0.3s, border 0.3s; 
+  }
+
+  /* 1. Disabled / Greyed Out State */
+  #previewBtn:disabled {
+    background-color: #94a3b8 !important;
+    color: #f8fafc !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+    border: 1px solid #94a3b8 !important;
+  }
+  html[data-theme="dark"] body #previewBtn:disabled {
+    background-color: #334155 !important;
+    color: #64748b !important;
+    border-color: #334155 !important;
+  }
+
+  /* 2. Ready / Green State */
+  #previewBtn.btn-ready {
+    background-color: var(--ok-strong) !important; /* Rich Green */
+    border: 1px solid var(--ok-strong) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4) !important;
+  }
+  html[data-theme="dark"] body #previewBtn.btn-ready {
+    background-color: #22c55e !important; /* Bright Green for Dark Mode */
+    border-color: #16a34a !important;
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3) !important;
+  }
+  #previewBtn.btn-ready:hover {
+    filter: brightness(1.1);
+  }
+
+
+  /* =========================================
+     GLOBAL DARK MODE (Syncs across all pages)
+     ========================================= */
+  [data-theme="dark"] {
+    --bg: #0f172a;       /* Dark slate background */
+    --card: #1e293b;     /* Slightly lighter cards */
+    --ink: #f8fafc;      /* Bright white text */
+    --muted: #94a3b8;    /* Muted gray text */
+    --line: #334155;     /* Dark gray borders */
+    --chip: #334155;
+  }
+
+  /* Force background and text colors */
+  [data-theme="dark"] body {
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+
+  /* Target all UI panels, cards, and sidebars across Form & Studio */
+  [data-theme="dark"] form,
+  [data-theme="dark"] .form-header-card,
+  [data-theme="dark"] .action-buttons,
+  [data-theme="dark"] .edu-block,
+  [data-theme="dark"] .extra-entry,
+  [data-theme="dark"] .skill-row,
+  [data-theme="dark"] .subject-result-row,
+  [data-theme="dark"] .sidebar,
+  [data-theme="dark"] .toolbar,
+  [data-theme="dark"] .panel,
+  [data-theme="dark"] #textPanel,
+  [data-theme="dark"] #ctxsheet,
+  [data-theme="dark"] dialog,
+  [data-theme="dark"] .card {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    color: var(--ink) !important;
+  }
+
+  /* Target all inputs */
+  [data-theme="dark"] input,
+  [data-theme="dark"] textarea,
+  [data-theme="dark"] select {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+  }
+
+  /* Target pills and badges */
+  [data-theme="dark"] .readonly-pill,
+  [data-theme="dark"] .template-pill,
+  [data-theme="dark"] .skill-level-badge,
+  [data-theme="dark"] #adPlaceholder {
+    background: #1e293b !important;
+    color: var(--brand) !important;
+    border-color: var(--line) !important;
+  }
+
+  /* 🚫 PROTECT RESUME PAGES: Keep the actual resume paper white! */
+  [data-theme="dark"] .page,
+  [data-theme="dark"] .page-wrap,
+  [data-theme="dark"] .resume-paper {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+
+  /* =========================================
+     DARK MODE UI PATCHES (Fixes all missing areas)
+     ========================================= */
+
+  /* 1. Fix the Settings Dashboard & Basic Info Profile Card */
+  [data-theme="dark"] .form-row[style*="border-radius: 14px"] {
+    background: var(--card) !important;
+    border-color: var(--line) !important;
+    box-shadow: none !important;
+  }
+  [data-theme="dark"] h3[style*="border-bottom"] {
+    color: #93c5fd !important;
+    border-bottom-color: var(--line) !important;
+  }
+
+  /* 2. Fix the "Original vs AI Enhanced" Radio Buttons */
+  [data-theme="dark"] .content-mode-option {
+    background: #1e293b !important;
+    color: var(--ink) !important;
+  }
+  [data-theme="dark"] .content-mode-option:hover {
+    background: #334155 !important;
+  }
+
+  /* 3. Fix the Ghost Buttons (Download / Upload) */
+  [data-theme="dark"] .ghost-btn {
+    background: transparent !important;
+    color: #93c5fd !important;
+    border-color: var(--line) !important;
+  }
+  [data-theme="dark"] .ghost-btn:hover {
+    background: #1e293b !important;
+  }
+
+  /* 4. Fix the Expected AI Output Blue Box */
+  [data-theme="dark"] div[style*="background: #eef2ff"] {
+    background: #1e293b !important;
+    border-color: var(--line) !important;
+    color: #93c5fd !important;
+  }
+
+  /* 5. Fix the Photo Upload Placeholder Circle */
+  [data-theme="dark"] #photoPlaceholder {
+    background: #1e293b !important;
+    border-color: var(--line) !important;
+    color: var(--muted) !important;
+  }
+
+  /* 6. Fix the "Concise tone" Toggle Switch */
+  [data-theme="dark"] .toggle .switch {
+    background: #334155 !important;
+    box-shadow: inset 0 0 0 1px var(--line) !important;
+  }
+  [data-theme="dark"] .toggle .switch::after { 
+    background: #94a3b8 !important; 
+  }
+  [data-theme="dark"] .toggle input:checked + .switch { 
+    background: var(--brand) !important; 
+  }
+  [data-theme="dark"] .toggle input:checked + .switch::after { 
+    background: #ffffff !important; 
+  }
+
+  /* =========================================
+     FINAL CONTRAST & BUTTON SPECIFICITY FIXES
+     ========================================= */
+
+  /* 1. Force Remove buttons to stay Red across ALL sections */
+  /* This targets both <button> and <input type="button"> with the .remove-btn class */
+  button.remove-btn, 
+  input[type="button"].remove-btn {
+    background: var(--danger) !important;
+    color: #ffffff !important;
+  }
+  
+  button.remove-btn:hover, 
+  input[type="button"].remove-btn:hover {
+    background: var(--danger-strong) !important;
+  }
+
+  /* 2. Improve visibility of "Required" chips in Dark Mode */
+  [data-theme="dark"] .chip {
+    background: #1e293b !important;
+    color: #93c5fd !important; /* Much brighter blue for readability */
+    border: 1px solid #334155 !important;
+    font-weight: 600;
+  }
+
+  /* 3. Improve contrast for section headers (H2 counts) */
+  [data-theme="dark"] h2 .count {
+    background: #334155 !important;
+    color: #f8fafc !important;
+  }
+
+  /* 4. Fix help text visibility */
+  [data-theme="dark"] .help, 
+  [data-theme="dark"] .muted {
+    color: #94a3b8 !important;
+  }
+
+  /* =========================================
+     FIX FOR BUTTON BORDERS IN DARK MODE
+     ========================================= */
+  [data-theme="dark"] button,
+  [data-theme="dark"] .upload-btn,
+  [data-theme="dark"] .download-btn,
+  [data-theme="dark"] input[type="button"],
+  [data-theme="dark"] input[type="submit"] {
+    border: 1px solid #475569 !important; /* Crisp dark-gray border */
+    background-color: #1e293b !important; /* Slightly elevated dark background */
+    color: #ffffff !important;            /* White text */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important; /* Subtle shadow to make it pop */
+  }
+
+  /* Add a nice hover effect so you know when you are clicking it */
+  [data-theme="dark"] button:hover,
+  [data-theme="dark"] .upload-btn:hover,
+  [data-theme="dark"] .download-btn:hover,
+  [data-theme="dark"] input[type="button"]:hover,
+  [data-theme="dark"] input[type="submit"]:hover {
+    border-color: #64748b !important;     /* Brighter border on hover */
+    background-color: #334155 !important; /* Slightly brighter background on hover */
+  }
+
+  /* =========================================
+     MASTER BUTTON HIERARCHY (DARK MODE)
+     ========================================= */
+
+  /* 1. THE GENERAL RULE (Dark Slate) 
+     This makes Upload, Add, and Submit buttons look professional. */
+  [data-theme="dark"] button,
+  [data-theme="dark"] input[type="button"],
+  [data-theme="dark"] input[type="submit"],
+  [data-theme="dark"] .upload-btn,
+  [data-theme="dark"] .download-btn,
+  [data-theme="dark"] .ghost-btn {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border: 1px solid #475569 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  }
+
+  /* 2. THE EXCEPTION RULE (Bold Red)
+     By using 'html[data-theme="dark"]', we force this rule to win 
+     over the general rule above. */
+  html[data-theme="dark"] .remove-btn,
+  html[data-theme="dark"] .removeCertBtn,
+  html[data-theme="dark"] .delete-btn {
+    background-color: #dc2626 !important; /* Solid Dark-Mode Red */
+    border: 1px solid #ef4444 !important; /* Brighter outline */
+    color: #ffffff !important;
+  }
+
+  /* 3. HOVER STATES */
+  [data-theme="dark"] button:hover,
+  [data-theme="dark"] .upload-btn:hover {
+    background-color: #334155 !important;
+    border-color: #64748b !important;
+  }
+
+  html[data-theme="dark"] .remove-btn:hover,
+  html[data-theme="dark"] .removeCertBtn:hover {
+    background-color: #ef4444 !important; /* Lights up on hover */
+    border-color: #f87171 !important;
+  }
+
+  /* =========================================
+     GENERATE BUTTON ANIMATION STATES
+     ========================================= */
+  #generateBtn {
+    background-color: #94a3b8 !important; /* Default Grey */
+    color: #ffffff !important;
+    border: 1px solid #94a3b8 !important;
+    transition: all 0.3s ease;
+  }
+  
+  /* Greyed out in dark mode */
+  [data-theme="dark"] #generateBtn {
+    background-color: #334155 !important;
+    color: #94a3b8 !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+  }
+
+  /* 🚀 Ready State */
+  #generateBtn.btn-ready {
+    background-color: var(--brand) !important; /* Bright Blue */
+    border: 1px solid var(--brand) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4) !important;
+    animation: generate-pulse 2s infinite;
+  }
+
+  /* 🚀 Ready State in Dark Mode */
+  [data-theme="dark"] #generateBtn.btn-ready {
+    background-color: #3b82f6 !important; /* Brighter Blue for Dark Mode */
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+    animation: generate-pulse-dark 2s infinite;
+  }
+
+  @keyframes generate-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+  }
+
+  @keyframes generate-pulse-dark {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  }
+  /* =========================================
+     ANIMATED DARK MODE TOGGLE SWITCH
+     ========================================= */
+  .theme-switch-wrapper {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 99999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 34px;
+    
+    /* Make it semi-transparent by default so users can see through it */
+    opacity: 0.35; 
+    /* Add a smooth fade animation */
+    transition: opacity 0.3s ease; 
+  }
+
+  /* Make it 100% visible when the user hovers their mouse over it */
+  .theme-switch-wrapper:hover {
+    opacity: 1;
+  }
+  
+  .theme-switch {
+    display: inline-block;
+    width: 64px;
+    height: 34px;
+    position: relative;
+  }
+  
+  .theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1; /* Light mode track (gray) */
+    transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    border-radius: 34px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: #ffffff;
+    transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 3;
+  }
+  
+  /* Dark Mode State */
+  input:checked + .slider {
+    background-color: #1e293b; /* Dark mode track (deep slate) */
+    border: 1px solid #334155;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(30px);
+    background-color: #0ea5e9; /* Brand blue knob in dark mode */
+  }
+  
+  /* Icons Container */
+  .slider svg {
+    position: absolute;
+    top: 7px;
+    width: 20px;
+    height: 20px;
+    z-index: 1;
+    transition: 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  
+  .sun-icon {
+    left: 7px;
+    color: #f59e0b; /* Orange sun */
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  
+  .moon-icon {
+    right: 7px;
+    color: #f8fafc; /* White moon */
+    opacity: 0;
+    transform: rotate(-30deg);
+  }
+  
+  /* Icon Animations */
+  input:checked + .slider .sun-icon {
+    opacity: 0;
+    transform: rotate(45deg);
+  }
+  
+  input:checked + .slider .moon-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+
+/* =========================================
+     CUSTOM TOAST NOTIFICATIONS
+     ========================================= */
+  #toast-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: none; /* Lets clicks pass through the gap */
+  }
+  
+  .toast {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--danger); /* Red stripe for missing info */
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    width: 320px;
+    pointer-events: auto; /* Catch clicks */
+    transform: translateX(120%); /* Start hidden off-screen */
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+  }
+  
+  .toast.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  
+  .toast-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--danger);
+  }
+  
+  .toast-content { flex-grow: 1; }
+  .toast-title { font-weight: 700; font-size: 1.05rem; margin: 0 0 4px 0; color: var(--ink); }
+  .toast-message { font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.5; }
+
+  
+</style>
+</head>
+<div class="theme-switch-wrapper">
+  <label class="theme-switch" title="Toggle Dark Mode">
+    <input type="checkbox" id="theme-toggle-checkbox" onclick="toggleDarkMode()">
+    <span class="slider">
+      <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    </span>
+  </label>
+</div>
+
+<script>
+  if (localStorage.getItem('theme') === 'dark') {
+    document.getElementById('theme-toggle-checkbox').checked = true;
+  }
+</script>
+<body>
+
+<div class="form-header-card">
+  <div class="form-header-content">
+    <h1>Tell Us About Yourself</h1>
+    <p>We'll use these details to build your professional resume. You can also customize your AI results.</p>
+  </div>
+  <div class="form-header-template">
+    <label>Current Template</label>
+    <div class="template-pill" id="templateLabel">
+      {{ (initial_template.name if initial_template else "—") }}
+    </div>
+  </div>
+</div>
+
+<form id="details-form" autocomplete="on" novalidate>
+
+<div class="form-row" style="background: #f8fafc; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 35px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+
+    <div class="form-section" style="flex: 1 1 30%; min-width: 250px;">
+      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">1. Basic Setup</h3>
+
+      <label>Selected Template</label>
+      <div id="selectedTemplateName" class="readonly-pill" style="margin-bottom: 20px;">
+        {{ (initial_template.name if initial_template else "—") }}
+      </div>
+      <select id="templateSelect" disabled style="display:none;">
+        <option value="{{ (initial_template.slug if initial_template else '') }}">
+          {{ (initial_template.name if initial_template else "—") }}
+        </option>
+      </select>
+
+      <label>Content Mode</label>
+      <div class="content-mode" style="margin-bottom: 20px;">
+        <label class="content-mode-option">
+          <input type="radio" name="contentMode" value="original" checked>
+          <span>Original Content</span>
+        </label>
+        <label class="content-mode-option">
+          <input type="radio" name="contentMode" value="ai">
+          <span>AI Enhanced</span>
+        </label>
+      </div>
+
+      <div class="resume-target">
+        <label class="resume-target-label">Targeting</label>
+        <div class="resume-target-options">
+          <label class="content-mode-option">
+            <input type="radio" name="resumeTarget" value="general" checked>
+            <span>General resume</span>
+          </label>
+          <label class="content-mode-option">
+            <input type="radio" name="resumeTarget" value="job">
+            <span>Job-specific</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" style="flex: 1 1 30%; min-width: 250px;">
+      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">2. Content Depth</h3>
+
+      <label for="detailLevel" style="margin-top: 5px;">Detail Level <span id="detailBadge" class="badge">Standard (50)</span></label>
+      <input type="range" id="detailLevel" min="0" max="100" step="1" value="50" style="margin-bottom: 8px;"/>
+      <div class="cre-labels"><span>Brief</span><span>Standard</span><span>Comprehensive</span></div>
+      <p class="muted" style="margin-bottom: 25px; font-size: 0.85rem;">Adjusts paragraph length and bullet point count.</p>
+
+      <label class="toggle" title="Shorter, tighter sentences">
+        <input type="checkbox" id="tone_crisp" class="visually-hidden" checked>
+        <span class="switch" aria-hidden="true"></span>
+        <span class="label">Use concise phrasing</span>
+      </label>
+    </div>
+
+    <div class="form-section" style="flex: 1 1 30%; min-width: 250px;">
+      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">3. AI Rewrite Strength</h3>
+
+      <label for="creativity" style="margin-top: 5px;">Rewrite Strength <span id="creativityBadge" class="badge">Balanced (50)</span></label>
+      <input type="range" id="creativity" min="0" max="100" step="1" value="50" style="margin-bottom: 8px;"/>
+      <div class="cre-labels"><span>Strict</span><span>Balanced</span><span>Creative</span></div>
+      <p class="muted" style="margin-bottom: 20px; font-size: 0.85rem;">Controls how much the AI alters your original phrasing.</p>
+
+      <div style="background: #eef2ff; color: #1e40af; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; border: 1px solid #c7d2fe;">
+        <strong style="display:block; margin-bottom:2px;">Expected AI Output:</strong>
+        <span id="derivedHint"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Job Target -->
+<div class="form-row" id="job-target-row" style="margin-bottom: 40px;">
+    <div class="form-section" style="flex: 1 1 100%;">
+      <h2>Job Applying For</h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; align-items: stretch;">
+          <div style="display: flex; flex-direction: column;">
+              <label for="jobTitle">Job Title <span class="chip">required</span></label>
+              <input type="text" id="jobTitle" name="jobTitle" required placeholder="Marketing Manager / Software Engineer" style="margin-bottom: 20px;" />
+
+          <div class="keep-active" style="flex-grow: 1; display: flex; flex-direction: column;">
+                  <label for="whyFit">Why You Fit This Job <span class="chip">required • 50–180 words</span></label>
+                  <textarea id="whyFit" name="whyFit" rows="5" required placeholder="Write 2–4 sentences explaining why you match this role." style="flex-grow: 1; margin-bottom: 0;"></textarea>
+              </div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column;">
+              <label for="jobDescription">Job Description <span class="chip">required • 50–180 words</span></label>
+              <textarea id="jobDescription" name="jobDescription" required placeholder="Paste the full job description here (responsibilities + requirements)." style="flex-grow: 1; margin-bottom: 0;"></textarea>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Basic + University -->
+<div class="form-row" style="background: #ffffff; padding: 25px 30px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 35px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+    <div class="form-section" id="basic-info-section" style="flex:1 1 100%;">
+      <h2>Basic Information</h2>
+      <div class="help" style="margin-bottom: 25px;">Your photo is optional and never sent to OpenAI.</div>
+
+      <div style="display: flex; gap: 35px; flex-wrap: wrap; align-items: flex-start;">
+          <div id="photoNotSupportedMessage" style="flex: 0 0 130px; display: none; flex-direction: column; align-items: center; justify-content: center; width: 130px; height: 130px; border-radius: 16px; border: 2px dashed #cbd5e1; background: #f8fafc; text-align: center; padding: 12px; box-sizing: border-box;">
+              <span style="font-size: 24px; margin-bottom: 8px;">🖼️</span>
+              <span style="color: #475569; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; line-height: 1.2;">No Photo Slot</span>
+              <span style="font-size: 0.65rem; color: #94a3b8; line-height: 1.3;">Add manually later in the <b>Studio</b></span>
+          </div>
+
+          <div id="photoUploadContainer" style="flex: 0 0 130px; display: flex; flex-direction: column; align-items: center; position: relative; margin-top: 15px;">
+              <img id="photoPreview" alt="Photo preview" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display:none; margin-bottom: 12px;" />
+              
+              <div id="photoPlaceholder" style="width: 120px; height: 120px; border-radius: 50%; border: 2px dashed #cbd5e1; background: #f8fafc; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #64748b; font-size: 0.85rem; font-weight: 500; text-align: center; padding: 15px; box-sizing: border-box; transition: 0.2s;">Upload<br>Photo</div>
+              
+              <button type="button" id="photoLabelBtn" class="ghost-btn" style="padding: 8px 12px; font-size: 0.85rem; border-radius: 8px; cursor: pointer; display: inline-block; width: 100%; box-sizing: border-box; text-align: center; margin:0;" onclick="document.getElementById('photo').click()">Choose File</button>
+              <input type="file" id="photo" name="photo" accept="image/*" style="display:none;" />
+              
+              <div id="photoDisabledOverlay" style="display: none; position: absolute; inset: 0; z-index: 10; cursor: not-allowed;" title="This layout does not support photos."></div>
+          </div>
+          <div style="flex: 1 1 500px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 25px;">
+              <div>
+                  <label for="fullName">Full Name <span class="chip">required</span></label>
+                  <input type="text" id="fullName" name="fullName" placeholder="John Doe" required />
+              </div>
+              <div>
+                  <label for="email">Email <span class="chip">required</span></label>
+                  <input type="email" id="email" name="email" placeholder="john@example.com" required />
+              </div>
+              <div>
+                  <label for="phone">Phone Number <span class="chip">required</span></label>
+                  <input type="tel" id="phone" name="phone" placeholder="+1 234 567 8900" required />
+              </div>
+              <div>
+                  <label for="address">Location / Address</label>
+                  <input type="text" id="address" name="address" placeholder="City, State / Country" />
+              </div>
+              <div>
+                  <label for="linkedin">LinkedIn URL</label>
+                  <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/username" />
+              </div>
+              <div>
+                  <label for="portfolio">Portfolio / Website</label>
+                  <input type="url" id="portfolio" name="portfolio" placeholder="https://your-website.com" />
+              </div>
+              <div>
+                  <label for="github">GitHub (optional)</label>
+                  <input type="url" id="github" name="github" placeholder="https://github.com/username" />
+              </div>
+          </div>
+      </div>
+    </div>
+  </div>
+
+    <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" style="flex:1 1 100%;" id="work-experience-section">
+      <h2>Work Experience</h2>
+      <div id="work-experience-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add Work Experience" onclick="addWorkExperience()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="university-section" style="flex:1 1 100%;">
+      <h2>University Education</h2>
+      <div id="university-education-container"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+          <input type="button" value="+ Add University Education" onclick="addEducation()" style="max-width: 300px; margin: 0;" />
+          <p class="muted" style="margin: 0;">Selecting <strong>Present</strong> in “To → Year” hides the “To → Month”.</p>
+      </div>
+    </div>
+  </div>
+
+
+
+<div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="school-section" style="flex:1 1 100%;">
+      <h2>Schools Attended</h2>
+      <div id="school-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+          <input type="button" value="+ Add School" onclick="addSchool()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="sports-section">
+      <h2>Sports & Extracurricular</h2>
+      <div class="edu-block" style="margin-bottom: 0;">
+          <label class="muted">Enter each item on a new line (no commas).</label>
+          <textarea id="sports" name="sports" rows="4" placeholder="Football&#10;Debate Club" style="margin-bottom:0;"></textarea>
+      </div>
+    </div>
+    <div class="form-section" id="achievements-section">
+      <h2>Achievements & Awards</h2>
+      <div class="edu-block" style="margin-bottom: 0;">
+          <label class="muted">Enter each achievement on a new line (no commas).</label>
+          <textarea id="achievements" name="achievements" rows="4" placeholder="Dean's List 2023&#10;Best Speaker 2022" style="margin-bottom:0;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="ol-results-section">
+      <h2>O/L Results</h2>
+      <label for="olYear">O/L Year (year only)</label>
+      <select id="olYear" name="olYear"></select>
+      <div id="ol-results-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add O/L Result" onclick="addOlResult()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+
+    <div class="form-section" id="al-results-section">
+      <h2>A/L Results</h2>
+      <label for="alYear">A/L Year (year only)</label>
+      <select id="alYear" name="alYear"></select>
+      <div id="al-results-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add A/L Result" onclick="addAlResult()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="skills-section" style="flex:1 1 100%;">
+      <h2>Skills</h2>
+      <p class="help">Set each skill’s level (Novice → Expert). We’ll still add relevant skills at higher creativity.</p>
+      <div id="skills-list"></div>
+      <div style="display: flex; margin-top: 10px;">
+          <input type="button" value="+ Add Skill" onclick="addSkillRow()" style="max-width: 300px; margin: 0;" />
+      </div>
+      <datalist id="skill-level-marks">
+        <option value="0" label="Novice"></option>
+        <option value="1" label="Beginner"></option>
+        <option value="2" label="Intermediate"></option>
+        <option value="3" label="Advanced"></option>
+        <option value="4" label="Expert"></option>
+      </datalist>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" id="certifications-section" style="flex:1 1 100%;">
+      <h2>Certifications</h2>
+      <div id="certList"></div>
+      <div style="display: flex; margin-top: 10px;">
+          <button type="button" id="addCertBtn" style="max-width: 300px; margin: 0;">+ Add certification</button>
+      </div>
+    </div>
+  </div>
+
+<template id="certRowTmpl">
+    <div class="cert-row edu-block" style="border:1px solid var(--line); padding:16px; margin-bottom:16px; border-radius:12px; background:#fafafa; position:relative;">
+      <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+        <div>
+          <label>Name <span class="chip">required</span></label>
+          <input name="certName[]" type="text" placeholder="AWS Certified..." required style="margin-bottom:0;">
+        </div>
+        <div>
+          <label>Issuer <span class="chip">required</span></label>
+          <input name="certIssuer[]" list="issuerList" placeholder="Amazon Web Services" required style="margin-bottom:0;">
+          <datalist id="issuerList"><option>AWS</option><option>Google</option><option>Microsoft</option><option>Coursera</option><option>edX</option><option>Cisco</option></datalist>
+        </div>
+        <div>
+          <label>Issue Date</label>
+          <div class="edu-inline">
+            <select name="certIssueMonth[]" style="margin-bottom:0;">
+              <option value=""></option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+            </select>
+            <input name="certIssueYear[]" type="number" placeholder="YYYY" style="margin-bottom:0;">
+          </div>
+        </div>
+        <div>
+          <label style="display: flex; justify-content: space-between; align-items: center;">
+            Expire Date 
+            <label style="font-size:0.85rem; font-weight:normal; margin:0; cursor:pointer; color: var(--muted); display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" name="certNoExpiry[]" style="width:auto; margin:0;"> No expiry
+            </label>
+          </label>
+          <div class="edu-inline">
+            <select name="certExpireMonth[]" style="margin-bottom:0;">
+              <option value=""></option><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+            </select>
+            <input name="certExpireYear[]" type="number" placeholder="YYYY" style="margin-bottom:0;">
+          </div>
+        </div>
+        <div>
+          <label>Credential ID</label>
+          <input name="certId[]" type="text" placeholder="ABC-1234" style="margin-bottom:0;">
+        </div>
+        <div>
+          <label>Credential URL</label>
+          <input name="certUrl[]" type="url" placeholder="https://..." style="margin-bottom:0;">
+        </div>
+      </div>
+      <div style="margin-top: 15px;">
+          <label>Description (optional)</label>
+          <textarea name="certDescription[]" rows="2" placeholder="Notes, topics, score, etc." style="margin-bottom:0;"></textarea>
+      </div>
+      <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+        <button type="button" class="removeCertBtn remove-btn" style="width:auto; margin:0;">Remove Certification</button>
+      </div>
+    </div>
+  </template>
+
+
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" style="flex:1 1 100%;" id="publications-section">
+      <h2>Publications</h2>
+      <div id="publications-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add Publication" onclick="addPublication()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" style="flex:1 1 100%;" id="extras-section">
+      <h2>Extra Sections</h2>
+      <label class="muted">Write items on separate lines (no commas).</label>
+      <div id="extras-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add Extra Section" onclick="addExtraSection()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-row" style="margin-bottom: 35px;">
+    <div class="form-section" style="flex:1 1 100%;" id="referees-section">
+      <h2>Referees</h2>
+      <div id="referees-container"></div>
+      <div style="display: flex; margin-top: 10px;">
+        <input type="button" value="+ Add Referee" onclick="addReferee()" style="max-width: 300px; margin: 0;" />
+      </div>
+    </div>
+  </div>
+
+ <div style="margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; padding: 0 10px; text-align: left;">
+    <input type="checkbox" id="privacyConsent" name="privacyConsent" style="width: 18px; height: 18px; margin-top: 2px; cursor: pointer;">
+    <label for="privacyConsent" style="font-size: 0.85rem; color: var(--muted); font-weight: normal; line-height: 1.5; cursor: pointer;">
+      I agree to the <a href="/terms" target="_blank" style="color: var(--brand); text-decoration: underline;">Terms of Service</a> and <a href="/privacy" target="_blank" style="color: var(--brand); text-decoration: underline;">Privacy Policy</a>. I understand that if I select "AI Enhanced," my data will be securely transmitted to OpenAI for processing.
+    </label>
+  </div>
+
+  <!-- Action Strip -->
+<div class="action-buttons">
+    <div class="action-row left-actions">
+      <input type="button" class="ghost-btn" value="Download Data" onclick="downloadData()" />
+      <input type="file" id="fileUpload" style="display:none" accept=".json" onchange="uploadData(event)" />
+      <input type="button" class="ghost-btn" value="Upload Data" onclick="document.getElementById('fileUpload').click()" />
+    </div>
+    <div class="action-row right-actions">
+      
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAC0qOgjeut9uGrNh"></div>
+      
+      <button type="button" id="generateBtn">Generate (Markdown)</button>
+      <button type="button" id="previewBtn" disabled style="font-weight: bold;">Preview in Template</button>
+    </div>
+  </div>
+
+</form>
+
+<pre id="resume-output" style="display:none; max-width:1100px; margin:0 auto; background:#fff; border:1px solid #ddd; padding:12px; border-radius:8px;"></pre>
+
+<dialog id="waitDialog" aria-live="polite">
+  <div style="display: flex; flex-direction: column; gap: 15px;">
+    
+    <div style="text-align: center;">
+      <h3 style="margin: 0 0 5px 0; color: var(--brand-strong); font-size: 1.4rem;">AI Generation in Progress</h3>
+      <p style="margin: 0; color: var(--muted); font-size: 0.95rem;">Please wait while our engine crafts your resume...</p>
+    </div>
+    
+    <div id="adPlaceholder" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 25px; text-align: center; color: #94a3b8; font-size: 0.85rem; display: none;">
+      </div>
+
+    <div style="background: #0f172a; border-radius: 8px; border: 1px solid #334155; padding: 15px; position: relative;">
+      <div style="position: absolute; top: -10px; left: 15px; background: #2dd4bf; color: #0f172a; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 10px;">LIVE SYSTEM LOGS</div>
+      
+      <div id="logContainer" style="color: #34d399; font-family: monospace; font-size: 0.85rem; height: 130px; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; scroll-behavior: smooth;">
+        </div>
+    </div>
+
+    <div id="successMessage" style="display: none; text-align: center; color: var(--ok-strong); font-weight: bold; font-size: 1.15rem; opacity: 0; transition: opacity 0.5s ease; margin-top: 5px;">
+      ✨ Generation Complete! Please click "Preview in Template"
+    </div>
+
+  </div>
+</dialog>
+
+<!-- Server fallback for template name/slug -->
+<script>
+  window.SERVER_TEMPLATE = {{ (initial_template or {"slug":"", "name":"—"}) | tojson | safe }};
+</script>
+
+<script>
+/* ========== Global state + constants ========== */
+let photoDataUrl = "";
+let lastAIStructured = null;
+let isReadyForPreview = false; // <--- NEW LOCKING FLAG
+const CURRENT_YEAR = new Date().getFullYear();
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const formEl   = document.getElementById('details-form');
+const outputEl = document.getElementById('resume-output');
+const waitDialog  = document.getElementById('waitDialog');
+const waitMessage = document.getElementById('waitMessage');
+
+/* ========== Template loader (preselects from ?template=slug) ========== */
+async function loadTemplatesIntoSelect(){
+  const sel = document.getElementById('templateSelect');
+  const label = document.getElementById('templateLabel');
+  const nameOut = document.getElementById('selectedTemplateName');
+  try{
+    const res = await fetch('/templates');
+    const list = await res.json();
+    sel.innerHTML = '';
+    if (!Array.isArray(list) || list.length === 0){
+      sel.innerHTML = '<option value="">No templates found</option>';
+      label.textContent = 'None'; nameOut.textContent = 'None';
+      return;
+    }
+    for (const t of list){
+      const opt = document.createElement('option');
+      opt.value = t.slug; opt.textContent = t.name || t.slug;
+      sel.appendChild(opt);
+    }
+    const urlSlug = new URLSearchParams(location.search).get('template');
+    sel.value = (urlSlug && list.some(t => t.slug === urlSlug)) ? urlSlug : list[0].slug;
+    const chosen = sel.options[sel.selectedIndex];
+    const chosenName = chosen ? chosen.textContent : (list[0].name || list[0].slug);
+    label.textContent = chosenName; nameOut.textContent = chosenName;
+  }catch(e){
+    console.error(e);
+    sel.innerHTML = '<option value="">Failed to load templates</option>';
+    label.textContent = '—'; nameOut.textContent = '—';
+  }
+}
+
+/* ========== Helpers ========== */
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+function el(tag, attrs={}, children=[]){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of (Array.isArray(children)?children:[children])) if (c) e.appendChild(c);
+  return e;
+}
+
+/* ========== Loading Terminal & Ad Variables ========== */
+let logInterval = null;
+const showAdDuringLoading = false; // Set to true later to show ads
+const futureAdHTML = `<div>Your Advertisement Space Here</div>`;
+
+const simulatedLogs = [
+  "Initializing AI Engine...",
+  "Analyzing target job constraints...",
+  "Parsing original work experience and education...",
+  "Re-structuring bullet points for maximum impact...",
+  "Optimizing keywords for ATS systems...",
+  "Applying detail level and verbosity rules...",
+  "Refining professional summary and tone...",
+  "Formatting output into structured data..."
+];
+
+function preventDialogCancel(e) { e.preventDefault(); } // Stops 'Esc' key from closing dialog
+
+function openWait() {
+  const logContainer = document.getElementById('logContainer');
+  const successMsg = document.getElementById('successMessage');
+  const adArea = document.getElementById('adPlaceholder');
+  
+  // Reset UI
+  logContainer.innerHTML = "";
+  successMsg.style.display = "none";
+  successMsg.style.opacity = "0";
+
+  // Handle Future Ad Space
+  if (showAdDuringLoading) {
+    adArea.innerHTML = futureAdHTML;
+    adArea.style.display = "block";
+  }
+
+  // Open Dialog and lock background/escape key
+  if (!waitDialog.open) {
+    waitDialog.addEventListener('cancel', preventDialogCancel);
+    waitDialog.showModal();
+  }
+
+  startSimulatedLogs();
+}
+
+function startSimulatedLogs() {
+  const logContainer = document.getElementById('logContainer');
+  let index = 0;
+  
+  const appendLog = (text) => {
+    const span = document.createElement('span');
+    span.textContent = `> ${text}`;
+    logContainer.appendChild(span);
+    logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll to bottom
+  };
+
+  appendLog(simulatedLogs[0]);
+  index++;
+
+  // Type a new log every 1.5 seconds
+  logInterval = setInterval(() => {
+    if (index < simulatedLogs.length) {
+      appendLog(simulatedLogs[index]);
+      index++;
+    } else {
+      clearInterval(logInterval);
+    }
+  }, 1500);
+}
+
+function closeWait() { 
+  if (waitDialog.open) {
+    waitDialog.removeEventListener('cancel', preventDialogCancel);
+    waitDialog.close(); 
+  }
+}
+
+function fillMonthYear(monthSelect, yearSelect, includePresent=false){
+  if (monthSelect){
+    monthSelect.innerHTML = "";
+    monthSelect.appendChild(el('option', { value:"", text:"Month" }));
+    MONTHS.forEach((m, i)=> monthSelect.appendChild(el('option', { value:String(i+1), text:m })));
+  }
+  if (yearSelect){
+    yearSelect.innerHTML = "";
+    yearSelect.appendChild(el('option', { value:"", text:"Year" }));
+    for (let y=CURRENT_YEAR+6; y>=1980; y--){
+      yearSelect.appendChild(el('option', { value:String(y), text:String(y) }));
+    }
+    if (includePresent){
+      yearSelect.appendChild(el('option', { value:"Present", text:"Present" }));
+    }
+  }
+}
+function attachPresentToggle(toMonthSelect, toYearSelect){
+  if (!toMonthSelect || !toYearSelect) return;
+  const update = ()=>{
+    const isPresent = toYearSelect.value === "Present";
+    toMonthSelect.style.display = isPresent ? "none" : "";
+    if (isPresent) toMonthSelect.value = "";
+  };
+  toYearSelect.addEventListener('change', update); update();
+}
+function fillYearOnly(sel){
+  if (!sel) return;
+  sel.innerHTML = "";
+  sel.appendChild(el('option', { value:"", text:"Year" }));
+  for (let y=CURRENT_YEAR+6; y>=1980; y--){
+    sel.appendChild(el('option', { value:String(y), text:String(y) }));
+  }
+}
+
+
+
+/* ========== Builders (add/remove sections) ========== */
+/* ========== Builders (add/remove sections) ========== */
+function removeBlock(btn){ const block = btn.closest('.edu-block, .extra-entry'); if (block) block.remove(); }
+
+function addEducation(){
+  const container = $('#university-education-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+      <div><label>Education Type</label><select name="eduType[]" style="margin-bottom:0;"><option>Bachelor</option><option>Master</option><option>PhD</option><option>Diploma</option><option>Other</option></select></div>
+      <div><label>University Name</label><input type="text" name="eduUniversity[]" placeholder="University of ..." style="margin-bottom:0;" /></div>
+      <div class="program-label-wrap"><label class="program-label">Program / Degree</label><input type="text" name="eduProgram[]" placeholder="e.g. BSc in Computer Science" style="margin-bottom:0;" /></div>
+      <div class="grade-wrap"><div><label>Grade / Class</label><input type="text" name="eduGrade[]" placeholder="e.g. Second Upper" style="margin-bottom:0;" /></div></div>
+      <div class="gpa-wrap"><div><label>GPA</label><input type="text" name="eduGPA[]" placeholder="e.g. 3.70 / 4.00" style="margin-bottom:0;" /></div></div>
+      <div class="thesis-wrap" style="display:none;"><div><label>Thesis / Title</label><input type="text" name="eduThesis[]" placeholder="Title (for Master or PhD)" style="margin-bottom:0;" /></div></div>
+      <div><label>From</label><div class="edu-inline"><select name="eduFromMonth[]" style="margin-bottom:0;"></select><select name="eduFromYear[]" style="margin-bottom:0;"></select></div></div>
+      <div><label>To (or Present)</label><div class="edu-inline"><select name="eduToMonth[]" style="margin-bottom:0;"></select><select name="eduToYear[]" style="margin-bottom:0;"></select></div></div>
+    </div>
+    <label style="margin-top:15px;">Research & Projects (bullets)</label>
+    <textarea name="eduResearch[]" rows="3" placeholder="- Built ...&#10;- Researched ..."></textarea>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove Education" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+
+  const typeSel = block.querySelector('select[name="eduType[]"]');
+  const gradeWrap = block.querySelector('.grade-wrap');
+  const gpaWrap = block.querySelector('.gpa-wrap');
+  const thesisWrap = block.querySelector('.thesis-wrap');
+  const [fromM, fromY] = block.querySelectorAll('select[name="eduFromMonth[]"], select[name="eduFromYear[]"]');
+  const [toM, toY] = block.querySelectorAll('select[name="eduToMonth[]"], select[name="eduToYear[]"]');
+
+  function applyTypeRules(){
+    const t = typeSel.value;
+    gradeWrap.style.display = (t==='Bachelor' || t==='Master') ? '' : 'none';
+    gpaWrap.style.display = (t==='Bachelor') ? '' : 'none';
+    thesisWrap.style.display = (t==='Master' || t==='PhD') ? '' : 'none';
+  }
+  typeSel.addEventListener('change', applyTypeRules);
+
+  fillMonthYear(fromM, fromY);
+  fillMonthYear(toM, toY, true);
+  attachPresentToggle(toM, toY);
+  applyTypeRules();
+}
+
+function addSchool(){
+  const container = $('#school-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+      <div style="grid-column: 1 / -1;"><label>School Name</label><input type="text" name="schoolName[]" placeholder="Example High School" style="margin-bottom:0;" /></div>
+      <div><label>From</label><div class="edu-inline"><select name="schoolFromMonth[]" style="margin-bottom:0;"></select><select name="schoolFromYear[]" style="margin-bottom:0;"></select></div></div>
+      <div><label>To (or Present)</label><div class="edu-inline"><select name="schoolToMonth[]" style="margin-bottom:0;"></select><select name="schoolToYear[]" style="margin-bottom:0;"></select></div></div>
+    </div>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove School" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+
+  const [fromM, fromY] = block.querySelectorAll('select[name="schoolFromMonth[]"], select[name="schoolFromYear[]"]');
+  const [toM, toY] = block.querySelectorAll('select[name="schoolToMonth[]"], select[name="schoolToYear[]"]');
+  fillMonthYear(fromM, fromY);
+  fillMonthYear(toM, toY, true);
+  attachPresentToggle(toM, toY);
+}
+
+function addWorkExperience(){
+  const container = $('#work-experience-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+      <div><label>Job Title</label><input type="text" name="jobTitleExp[]" placeholder="Software Engineer" style="margin-bottom:0;" /></div>
+      <div><label>Company</label><input type="text" name="company[]" placeholder="ABC Ltd." style="margin-bottom:0;" /></div>
+      <div><label>From</label><div class="edu-inline"><select name="workFromMonth[]" style="margin-bottom:0;"></select><select name="workFromYear[]" style="margin-bottom:0;"></select></div></div>
+      <div><label>To (or Present)</label><div class="edu-inline"><select name="workToMonth[]" style="margin-bottom:0;"></select><select name="workToYear[]" style="margin-bottom:0;"></select></div></div>
+    </div>
+    <label style="margin-top:15px;">Responsibilities / What You Did</label>
+    <textarea name="workDescription[]" rows="5" placeholder="- Led a team...&#10;- Built REST APIs..."></textarea>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove Experience" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+  const [fromM, fromY] = block.querySelectorAll('select[name="workFromMonth[]"], select[name="workFromYear[]"]');
+  const [toM, toY] = block.querySelectorAll('select[name="workToMonth[]"], select[name="workToYear[]"]');
+  fillMonthYear(fromM, fromY); fillMonthYear(toM, toY, true); attachPresentToggle(toM, toY);
+}
+
+function addPublication(){
+  const container = $('#publications-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+      <div><label>Title</label><input type="text" name="pubTitle[]" placeholder="Paper or article title" style="margin-bottom:0;" /></div>
+      <div><label>Venue / Journal / Conference</label><input type="text" name="pubVenue[]" placeholder="IEEE Access / Medium" style="margin-bottom:0;" /></div>
+      <div><label>Date</label><div class="edu-inline"><select name="pubMonth[]" style="margin-bottom:0;"></select><select name="pubYear[]" style="margin-bottom:0;"></select></div></div>
+      <div><label>Link (optional)</label><input type="url" name="pubLink[]" placeholder="https://..." style="margin-bottom:0;" /></div>
+    </div>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove Publication" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+  fillMonthYear(block.querySelector('select[name="pubMonth[]"]'), block.querySelector('select[name="pubYear[]"]'));
+}
+
+/* ===== Extras / Referees / OL / AL ===== */
+function addExtraSection(){
+  const container = $('#extras-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: start;">
+      <div>
+        <label>Section Name</label>
+        <input type="text" name="extraName[]" placeholder="Certifications, Volunteering" style="margin-bottom:0;" />
+      </div>
+      <div style="grid-column: 1 / -1;">
+        <label>Description (Items on new lines)</label>
+        <textarea name="extraDescription[]" rows="4" placeholder="- Item one&#10;- Item two" style="margin-bottom:0;"></textarea>
+      </div>
+    </div>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove Section" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+}
+
+function addReferee(){
+  const container = $('#referees-container');
+  const block = el('div', { class:'edu-block' });
+  block.innerHTML = `
+    <div class="drag-handle" aria-hidden="true">⋮⋮</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+      <div><label>Name</label><input type="text" name="refName[]" placeholder="Jane Doe" style="margin-bottom:0;" /></div>
+      <div><label>Position</label><input type="text" name="refPosition[]" placeholder="Senior Manager, ACME Ltd." style="margin-bottom:0;" /></div>
+      <div><label>Email</label><input type="email" name="refEmail[]" placeholder="jane@example.com" style="margin-bottom:0;" /></div>
+      <div><label>Mobile</label><input type="tel" name="refMobile[]" placeholder="+94 7X XXX XXXX" style="margin-bottom:0;" /></div>
+    </div>
+    <div class="edu-actions" style="margin-top:15px; display:flex; justify-content:flex-end;">
+      <input type="button" class="remove-btn" style="width:auto; margin:0;" value="Remove Referee" onclick="removeBlock(this)" />
+    </div>
+  `;
+  container.appendChild(block);
+}
+function addOlResult(){
+  const container = $('#ol-results-container');
+  const row = el('div', { class:'subject-result-row' });
+  row.innerHTML = `
+    <input type="text" name="olSubject[]" placeholder="Subject" />
+    <select name="olGrade[]"><option value="">Grade</option><option>A*</option><option>A</option><option>B</option><option>C</option><option>S</option><option>W</option><option>Pending</option></select>
+    <input type="button" class="remove-btn" value="Remove" onclick="this.parentElement.remove()" />
+  `;
+  container.appendChild(row);
+}
+function addAlResult(){
+  const container = $('#al-results-container');
+  const row = el('div', { class:'subject-result-row' });
+  row.innerHTML = `
+    <input type="text" name="alSubject[]" placeholder="Subject" />
+    <select name="alGrade[]"><option value="">Grade</option><option>A*</option><option>A</option><option>B</option><option>C</option><option>S</option><option>F</option><option>Pending</option></select>
+    <input type="button" class="remove-btn" value="Remove" onclick="this.parentElement.remove()" />
+  `;
+  container.appendChild(row);
+}
+
+// 🚀 RESTORED MISSING CERTIFICATION FUNCTIONS
+function addCertRow(data = {}){
+  const list = document.getElementById('certList');
+  const tmpl = document.getElementById('certRowTmpl');
+  if (!list || !tmpl) return;
+  const clone = tmpl.content.cloneNode(true);
+  const row = clone.querySelector('.cert-row');
+
+  if (data.name) row.querySelector('[name="certName[]"]').value = data.name;
+  if (data.issuer) row.querySelector('[name="certIssuer[]"]').value = data.issuer;
+  if (data.issueMonth) row.querySelector('[name="certIssueMonth[]"]').value = data.issueMonth;
+  if (data.issueYear) row.querySelector('[name="certIssueYear[]"]').value = data.issueYear;
+  if (data.expireMonth) row.querySelector('[name="certExpireMonth[]"]').value = data.expireMonth;
+  if (data.expireYear) row.querySelector('[name="certExpireYear[]"]').value = data.expireYear;
+  if (data.credential_id) row.querySelector('[name="certId[]"]').value = data.credential_id;
+  if (data.url) row.querySelector('[name="certUrl[]"]').value = data.url;
+  if (data.description) row.querySelector('[name="certDescription[]"]').value = data.description;
+  if (data.noExpiry) row.querySelector('[name="certNoExpiry[]"]').checked = true;
+
+  row.querySelector('.removeCertBtn').addEventListener('click', () => row.remove());
+  list.appendChild(row);
+}
+
+function gatherCertifications() {
+  const getVals = (sel)=> Array.from(document.querySelectorAll(sel)).map(e=>e.value || "");
+  const cNE = Array.from(document.querySelectorAll('input[name="certNoExpiry[]"]')).map(e=>e.checked);
+  return {
+    certName: getVals('input[name="certName[]"]'),
+    certIssuer: getVals('input[name="certIssuer[]"]'),
+    certIssueMonth: getVals('select[name="certIssueMonth[]"]'),
+    certIssueYear: getVals('input[name="certIssueYear[]"]'),
+    certExpireMonth: getVals('select[name="certExpireMonth[]"]'),
+    certExpireYear: getVals('input[name="certExpireYear[]"]'),
+    certId: getVals('input[name="certId[]"]'),
+    certUrl: getVals('input[name="certUrl[]"]'),
+    certDescription: getVals('textarea[name="certDescription[]"]'),
+    certNoExpiry: cNE
+  };
+}
+// 🚀 END RESTORED FUNCTIONS
+
+/* ===== Single-slider mapping → internal knobs ===== */
+// Matches app.py: <40 is Tier 0, <70 is Tier 1, else Tier 2
+function tierFromStyle(v){ if (v < 40) return 0; if (v < 70) return 1; return 2; }
+function verbosityFromStyle(v){ if (v <= 20) return 20; if (v <= 60) return 40 + Math.round((v-21)*(30/39)); return 75 + Math.round((v-61)*(25/39)); }
+function shouldQuantify(style, jobText){ const jt=(jobText||"").toLowerCase(); return style>=65 || /(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)/.test(jt); }
+function shouldEnforceRelevance(style, skillsText, role){
+  const skills = (skillsText||"").split(/\r?\n|,|;/).map(s=>s.trim()).filter(Boolean);
+  return Boolean(role && role.trim()) || skills.length > 12 || style >= 60;
+}
+function updateDerivedHint(){
+  // 1. Update Detail Level Badge
+  const dVal = Number(document.getElementById('detailLevel').value);
+  const tier = tierFromStyle(dVal);
+  const verbosity = verbosityFromStyle(dVal);
+  const detailModes = ["Concise", "Standard", "Detailed"];
+  document.getElementById('detailBadge').textContent = `${detailModes[tier]} (${dVal})`;
+
+  // 2. Update Creativity Badge
+  const cVal = Number(document.getElementById('creativity').value);
+  const creatModes = ["Consistent", "Balanced", "Unique"];
+  // map 0..2 roughly to low/mid/high for label
+  let cTier = 1; 
+  if(cVal < 35) cTier = 0; else if(cVal > 65) cTier = 2;
+  document.getElementById('creativityBadge').textContent = `${creatModes[cTier]} (${cVal})`;
+
+  // 3. Update Text Hint
+  // ✅ UPDATED: Visual hints to match new backend limits
+  const profileWords = (tier===0? "~60 words" : (tier===1? `~${80 + Math.round((verbosity-40)*1.0)} words` : `~${130 + Math.round((verbosity-75)*2)} words`));
+  document.getElementById('derivedHint').textContent =
+    `Output: Profile ${profileWords}. Creativity (${cVal}%) controls phrasing uniqueness.`;
+}
+
+/* ===== Skills builder ===== */
+function setSkillSliderUI(row, val){
+  const slider = row.querySelector(".skill-level");
+  const out = row.querySelector(".skill-level-badge");
+  slider.value = val;
+  const pct = (val/4)*100;
+  slider.style.setProperty("--pct", pct);
+  const labels = ["Novice","Beginner","Intermediate","Advanced","Expert"];
+  out.value = `${labels[val]} (${val+1}/5)`; out.textContent = out.value;
+}
+function bindSkillRow(row){
+  const slider = row.querySelector(".skill-level");
+  slider.addEventListener("input", e => setSkillSliderUI(row, parseInt(e.target.value,10)));
+  row.querySelector(".remove-btn").addEventListener("click", () => row.remove());
+  setSkillSliderUI(row, parseInt(slider.value,10));
+}
+function addSkillRow(prefill={name:"", level:2}){
+  const list = document.getElementById("skills-list");
+  const row = document.createElement("div");
+  row.className = "skill-row";
+  row.innerHTML = `
+    <input type="text" name="skillName[]" class="skill-name" placeholder="e.g., SEO" required value="${(prefill.name||"").replace(/"/g,'&quot;')}">
+    <input type="range" name="skillLevel[]" class="skill-level" min="0" max="4" step="1" value="${Number.isFinite(prefill.level)?prefill.level:2}" list="skill-level-marks" aria-label="Skill level">
+    <output class="skill-level-badge" aria-live="polite"></output>
+    <input type="button" class="remove-btn" value="Remove">
+  `;
+  list.appendChild(row);
+  bindSkillRow(row);
+}
+function collectSkills(){
+  const rows = Array.from(document.querySelectorAll('#skills-list .skill-row'));
+  const skills = rows.map(r => {
+    const name = r.querySelector('.skill-name')?.value?.trim() || "";
+    const level5 = parseInt(r.querySelector('.skill-level')?.value || "2", 10); // 0..4
+    return { 
+        name: name, 
+        level5: level5, 
+        level100: Math.round((level5/4)*100),
+        level: level5 + 1 // ✅ FIX: Add the exact 1-5 level property studio.html looks for!
+    };
+  }).filter(s => s.name);
+  return {
+    skillsStructured: skills,
+    skillsText: skills.map(s=>s.name).join('\n')
+  };
+}
+
+/* ===== Data collection ===== */
+function collectForm(){
+  const getVals = (sel)=> Array.from(document.querySelectorAll(sel)).map(e=>e.value || "");
+
+  const style = Number(document.getElementById('creativity').value);
+  const derivedVerbosity = verbosityFromStyle(style);
+  const jobTitle = $('#jobTitle').value;
+  const jobDescription = $('#jobDescription').value;
+  const whyFit = document.getElementById('whyFit') ? document.getElementById('whyFit').value : "";
+
+  // radio states (original|ai) and (general|job)
+  const contentMode = document.querySelector('input[name="contentMode"]:checked')?.value || "original";
+  const resumeTarget = document.querySelector('input[name="resumeTarget"]:checked')?.value || "general";
+
+  // Only true when BOTH selected
+  const jobTargetEnabled = (contentMode === "ai") && (resumeTarget === "job");
+
+
+  // Auto toggles (not shown in UI)
+  const tone_quantify = shouldQuantify(style, jobDescription);
+  const enforce_relevance = shouldEnforceRelevance(style, $('#skills')?.value || "", jobTitle);
+
+  const d = {
+    cfToken: document.querySelector('[name="cf-turnstile-response"]')?.value || "",
+    creativity: style,     // This is the randomness
+    detailLevel: Number(document.getElementById('detailLevel').value), // This is the length
+    verbosity:  derivedVerbosity,
+    tone_crisp: $('#tone_crisp').checked,
+    tone_quantify: tone_quantify,
+    relevance_strict: enforce_relevance,
+    enforce_relevance: enforce_relevance,
+
+    // template slug (hidden select)
+    template: document.getElementById('templateSelect')?.value || "",
+
+    // mode flags for backend logic
+    contentMode: contentMode,
+    resumeTarget: resumeTarget,
+    jobTargetEnabled: jobTargetEnabled,
+
+    // job-targeting inputs
+    jobTitle: jobTargetEnabled ? jobTitle : "",
+    jobDescription: jobTargetEnabled ? jobDescription : "",
+    whyFit: (contentMode === "original") ? whyFit : (jobTargetEnabled ? whyFit : ""),
+
+
+
+    /* contact */
+    fullName: $('#fullName').value,
+    email: $('#email').value,
+    phone: $('#phone').value,
+    address: $('#address').value,
+    linkedin: $('#linkedin').value,
+    portfolio: $('#portfolio').value,
+    github: $('#github').value,
+
+    /* education */
+    eduType: getVals('select[name="eduType[]"]'),
+    eduUniversity: getVals('input[name="eduUniversity[]"]'),
+    eduProgram: getVals('input[name="eduProgram[]"]'),
+    eduGrade: getVals('input[name="eduGrade[]"]'),
+    eduGPA: getVals('input[name="eduGPA[]"]'),
+    eduThesis: getVals('input[name="eduThesis[]"]'),
+    eduFromMonth: getVals('select[name="eduFromMonth[]"]'),
+    eduFromYear: getVals('select[name="eduFromYear[]"]'),
+    eduToMonth: getVals('select[name="eduToMonth[]"]'),
+    eduToYear: getVals('select[name="eduToYear[]"]'),
+    eduResearch: getVals('textarea[name="eduResearch[]"]'),
+
+    /* schools */
+    schoolName: getVals('input[name="schoolName[]"]'),
+    schoolFromMonth: getVals('select[name="schoolFromMonth[]"]'),
+    schoolFromYear: getVals('select[name="schoolFromYear[]"]'),
+    schoolToMonth: getVals('select[name="schoolToMonth[]"]'),
+    schoolToYear: getVals('select[name="schoolToYear[]"]'),
+
+    /* O/L & A/L */
+    olYear: $('#olYear').value,
+    alYear: $('#alYear').value,
+    olSubject: getVals('input[name="olSubject[]"]'),
+    olGrade: getVals('select[name="olGrade[]"]'),
+    alSubject: getVals('input[name="alSubject[]"]'),
+    alGrade: getVals('select[name="alGrade[]"]'),
+
+    /* work */
+    jobTitleExp: getVals('input[name="jobTitleExp[]"]'),
+    company: getVals('input[name="company[]"]'),
+    workFromMonth: getVals('select[name="workFromMonth[]"]'),
+    workFromYear: getVals('select[name="workFromYear[]"]'),
+    workToMonth: getVals('select[name="workToMonth[]"]'),
+    workToYear: getVals('select[name="workToYear[]"]'),
+    workDescription: getVals('textarea[name="workDescription[]"]'),
+
+    /* publications */
+    pubTitle: getVals('input[name="pubTitle[]"]'),
+    pubVenue: getVals('input[name="pubVenue[]"]'),
+    pubMonth: getVals('select[name="pubMonth[]"]'),
+    pubYear: getVals('select[name="pubYear[]"]'),
+    pubLink: getVals('input[name="pubLink[]"]'),
+
+    /* extras */
+    extraName: getVals('input[name="extraName[]"]'),
+    extraDescription: getVals('textarea[name="extraDescription[]"]'),
+
+    /* refs */
+    refName: getVals('input[name="refName[]"]'),
+    refPosition: getVals('input[name="refPosition[]"]'),
+    refEmail: getVals('input[name="refEmail[]"]'),
+    refMobile: getVals('input[name="refMobile[]"]'),
+
+    /* free text */
+    /* free text */
+    sports: $('#sports').value,
+    achievements: $('#achievements').value
+  };
+
+
+
+// Skills — add AFTER the object is closed (prevents syntax errors)
+  const ks = collectSkills();
+  d.skillsStructured = ks.skillsStructured;
+  d.skills_structured = ks.skillsStructured; // ✅ FIX: Pass snake_case so studio.html can read it!
+  d.skills = ks.skillsText;  // newline list for legacy flows
+
+  // Certifications
+  Object.assign(d, gatherCertifications());
+
+  // Photo (inline as data URL; never sent to OpenAI in your backend)
+  if (photoDataUrl) d.photo = photoDataUrl;
+
+  return d;
+}
+
+/* ===== Download/Upload JSON ===== */
+function downloadData(){
+  const data = collectForm();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'resume_data.json'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+function uploadData(e){
+  const f = e.target.files[0]; 
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { 
+    try { 
+      const parsedData = JSON.parse(r.result);
+      restoreForm(parsedData); 
+    } catch (err) { 
+      console.error("Upload Error:", err);
+      if (err instanceof SyntaxError) {
+          alert('Invalid JSON File: There is a syntax error in your file (check for missing commas or brackets).');
+      } else {
+          alert('Restoration Error: The file is valid JSON, but the code failed to populate the form. Check the browser console for details.');
+      }
+    } 
+  };
+  r.readAsText(f);
+}
+
+/* ===== Restore helper (best-effort) ===== */
+function restoreForm(d){
+  if (!d || typeof d !== 'object') return;
+
+  const setVal = (id, v) => { 
+    const el = document.getElementById(id); 
+    if(el) el.value = v ?? ""; 
+  };
+  const setCheck = (id, v) => { 
+    const el = document.getElementById(id); 
+    if(el) el.checked = !!v; 
+  };
+
+  // 1. Basic Settings & AI Controls
+  setVal('creativity', d.creativity ?? 50);
+  setVal('detailLevel', d.detailLevel ?? 50);
+  setCheck('tone_crisp', !!d.tone_crisp);
+  
+  // 2. Content Modes
+  if (d.contentMode) {
+      const modeRadio = document.querySelector(`input[name="contentMode"][value="${d.contentMode}"]`);
+      if (modeRadio) modeRadio.checked = true;
+  }
+  if (d.resumeTarget) {
+      const targetRadio = document.querySelector(`input[name="resumeTarget"][value="${d.resumeTarget}"]`);
+      if (targetRadio) targetRadio.checked = true;
+  }
+
+  // 3. Job Target Fields
+  // Note: We fill these regardless of mode; the updateUI logic will handle hiding them.
+  setVal('jobTitle', d.jobTitle || "");
+  setVal('jobDescription', d.jobDescription || "");
+  setVal('whyFit', d.whyFit || "");
+  
+  // 4. Basic Information
+  setVal('fullName', d.fullName || "");
+  setVal('email', d.email || "");
+  setVal('phone', d.phone || "");
+  setVal('address', d.address || "");
+  setVal('linkedin', d.linkedin || "");
+  setVal('portfolio', d.portfolio || "");
+  setVal('github', d.github || "");
+
+  // 5. Profile Photo Restoration
+  if (d.photo) {
+    photoDataUrl = d.photo;
+    const img = document.getElementById('photoPreview');
+    const ph = document.getElementById('photoPlaceholder');
+    if (img) { img.src = photoDataUrl; img.style.display = 'block'; }
+    if (ph) { ph.style.display = 'none'; }
+  }
+
+  // 6. Clear all Dynamic Containers
+  const containers = [
+    '#university-education-container', '#school-container', '#work-experience-container',
+    '#publications-container', '#extras-container', '#referees-container',
+    '#ol-results-container', '#al-results-container', '#certList', '#skills-list'
+  ];
+  containers.forEach(selector => {
+      const el = document.querySelector(selector);
+      if (el) el.innerHTML = "";
+  });
+
+  // 7. Work Experience
+  const Lw = (d.jobTitleExp || []).length;
+  for(let i=0; i<Lw; i++){
+    addWorkExperience();
+    const block = $$('#work-experience-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('input[name="jobTitleExp[]"]').value = d.jobTitleExp[i] || "";
+        block.querySelector('input[name="company[]"]').value = d.company[i] || "";
+        block.querySelector('select[name="workFromMonth[]"]').value = (d.workFromMonth||[])[i] || "";
+        block.querySelector('select[name="workFromYear[]"]').value = (d.workFromYear||[])[i] || "";
+        block.querySelector('select[name="workToMonth[]"]').value = (d.workToMonth||[])[i] || "";
+        block.querySelector('select[name="workToYear[]"]').value = (d.workToYear||[])[i] || "";
+        block.querySelector('textarea[name="workDescription[]"]').value = (d.workDescription||[])[i] || "";
+        // Trigger the Present toggle for dates
+        block.querySelector('select[name="workToYear[]"]').dispatchEvent(new Event('change'));
+    }
+  }
+
+  // 8. University Education
+  const Ledu = (d.eduUniversity || []).length;
+  for(let i=0; i<Ledu; i++){
+    addEducation();
+    const block = $$('#university-education-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('select[name="eduType[]"]').value = (d.eduType||[])[i] || "Bachelor";
+        block.querySelector('input[name="eduUniversity[]"]').value = d.eduUniversity[i] || "";
+        block.querySelector('input[name="eduProgram[]"]').value = (d.eduProgram||[])[i] || "";
+        block.querySelector('input[name="eduGrade[]"]').value = (d.eduGrade||[])[i] || "";
+        block.querySelector('input[name="eduGPA[]"]').value = (d.eduGPA||[])[i] || "";
+        block.querySelector('input[name="eduThesis[]"]').value = (d.eduThesis||[])[i] || "";
+        block.querySelector('select[name="eduFromMonth[]"]').value = (d.eduFromMonth||[])[i] || "";
+        block.querySelector('select[name="eduFromYear[]"]').value = (d.eduFromYear||[])[i] || "";
+        block.querySelector('select[name="eduToMonth[]"]').value = (d.eduToMonth||[])[i] || "";
+        block.querySelector('select[name="eduToYear[]"]').value = (d.eduToYear||[])[i] || "";
+        block.querySelector('textarea[name="eduResearch[]"]').value = (d.eduResearch||[])[i] || "";
+        block.querySelector('select[name="eduToYear[]"]').dispatchEvent(new Event('change'));
+        block.querySelector('select[name="eduType[]"]').dispatchEvent(new Event('change'));
+    }
+  }
+
+  // 9. Schools
+  const Lsch = (d.schoolName || []).length;
+  for(let i=0; i<Lsch; i++){
+    addSchool();
+    const block = $$('#school-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('input[name="schoolName[]"]').value = d.schoolName[i] || "";
+        block.querySelector('select[name="schoolFromMonth[]"]').value = (d.schoolFromMonth||[])[i] || "";
+        block.querySelector('select[name="schoolFromYear[]"]').value = (d.schoolFromYear||[])[i] || "";
+        block.querySelector('select[name="schoolToMonth[]"]').value = (d.schoolToMonth||[])[i] || "";
+        block.querySelector('select[name="schoolToYear[]"]').value = (d.schoolToYear||[])[i] || "";
+        block.querySelector('select[name="schoolToYear[]"]').dispatchEvent(new Event('change'));
+    }
+  }
+
+  // 10. Certifications
+  const Lc = (d.certName || []).length;
+  for (let i=0; i<Lc; i++){
+    addCertRow({ 
+        name: d.certName[i], 
+        issuer: (d.certIssuer||[])[i], 
+        issueMonth: (d.certIssueMonth||[])[i], 
+        issueYear: (d.certIssueYear||[])[i], 
+        expireMonth: (d.certExpireMonth||[])[i], 
+        expireYear: (d.certExpireYear||[])[i], 
+        noExpiry: !!(d.certNoExpiry||[])[i], 
+        credential_id: (d.certId||[])[i], 
+        url: (d.certUrl||[])[i], 
+        description: (d.certDescription||[])[i] 
+    });
+  }
+
+  // 11. O/L & A/L
+  setVal('olYear', d.olYear || "");
+  setVal('alYear', d.alYear || "");
+  (d.olSubject || []).forEach((s, i) => {
+    addOlResult();
+    const row = $$('#ol-results-container .subject-result-row').slice(-1)[0];
+    if (row) {
+        row.querySelector('input[name="olSubject[]"]').value = s;
+        row.querySelector('select[name="olGrade[]"]').value = (d.olGrade||[])[i] || "";
+    }
+  });
+  (d.alSubject || []).forEach((s, i) => {
+    addAlResult();
+    const row = $$('#al-results-container .subject-result-row').slice(-1)[0];
+    if (row) {
+        row.querySelector('input[name="alSubject[]"]').value = s;
+        row.querySelector('select[name="alGrade[]"]').value = (d.alGrade||[])[i] || "";
+    }
+  });
+
+  // 12. Skills
+  if (Array.isArray(d.skillsStructured) && d.skillsStructured.length){
+    d.skillsStructured.forEach(s => addSkillRow({ name: s.name, level: s.level5 }));
+  } else if (typeof d.skills === "string" && d.skills.trim()){
+    d.skills.split(/\n|,/).forEach(name => addSkillRow({ name: name.trim(), level: 2 }));
+  }
+
+  // 13. Other Sections
+  setVal('sports', d.sports || "");
+  setVal('achievements', d.achievements || "");
+  (d.pubTitle || []).forEach((t, i) => {
+    addPublication();
+    const block = $$('#publications-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('input[name="pubTitle[]"]').value = t;
+        block.querySelector('input[name="pubVenue[]"]').value = (d.pubVenue||[])[i] || "";
+        block.querySelector('select[name="pubMonth[]"]').value = (d.pubMonth||[])[i] || "";
+        block.querySelector('select[name="pubYear[]"]').value = (d.pubYear||[])[i] || "";
+        block.querySelector('input[name="pubLink[]"]').value = (d.pubLink||[])[i] || "";
+    }
+  });
+  (d.extraName || []).forEach((n, i) => {
+    addExtraSection();
+    const block = $$('#extras-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('input[name="extraName[]"]').value = n;
+        block.querySelector('textarea[name="extraDescription[]"]').value = (d.extraDescription||[])[i] || "";
+    }
+  });
+  (d.refName || []).forEach((n, i) => {
+    addReferee();
+    const block = $$('#referees-container .edu-block').slice(-1)[0];
+    if (block) {
+        block.querySelector('input[name="refName[]"]').value = n;
+        block.querySelector('input[name="refPosition[]"]').value = (d.refPosition||[])[i] || "";
+        block.querySelector('input[name="refEmail[]"]').value = (d.refEmail||[])[i] || "";
+        block.querySelector('input[name="refMobile[]"]').value = (d.refMobile||[])[i] || "";
+    }
+  });
+
+  // 14. Refresh UI states
+  updateJobTargetUI();
+  updateDerivedHint();
+  checkGenerateReadiness(); // 🚀 ADDED HERE
+}
+
+/* ===== Helper: Convert Raw Form Data to Structured Data for Editor ===== */
+function structureRawData(d) {
+  const getVal = (arr, i) => (arr && arr[i]) ? arr[i] : "";
+  const getMonth = (m) => MONTHS[parseInt(m) - 1] || "";
+
+  // 1. Work Experience
+  const work = [];
+  const lenW = (d.jobTitleExp || []).length;
+  for (let i = 0; i < lenW; i++) {
+    const from = `${getMonth(d.workFromMonth[i])} ${d.workFromYear[i] || ''}`.trim();
+    const to = `${getMonth(d.workToMonth[i])} ${d.workToYear[i] || ''}`.trim();
+    work.push({
+      title: d.jobTitleExp[i],
+      company: d.company[i],
+      period: (from || to) ? `${from} – ${to}` : "",
+      bullets: d.workDescription[i] // Raw text
+    });
+  }
+
+  // 2. Education
+  const edu = [];
+  const lenE = (d.eduUniversity || []).length;
+  for (let i = 0; i < lenE; i++) {
+    const from = `${getMonth(d.eduFromMonth[i])} ${d.eduFromYear[i] || ''}`.trim();
+    const to = `${getMonth(d.eduToMonth[i])} ${d.eduToYear[i] || ''}`.trim();
+    edu.push({
+      institution: d.eduUniversity[i],
+      degree: d.eduProgram[i],
+      period: (from || to) ? `${from} – ${to}` : "",
+      details: d.eduResearch[i] // Raw text
+    });
+  }
+
+  // 3. Schools (Secondary)
+  const schools = [];
+  const lenS = (d.schoolName || []).length;
+  for (let i = 0; i < lenS; i++) {
+    schools.push({
+      name: d.schoolName[i],
+      period: `${d.schoolFromYear[i] || ''} – ${d.schoolToYear[i] || ''}`
+    });
+  }
+
+  return {
+    ...d,
+    experience: work, // Editor looks for 'experience' or 'work'
+    work: work,
+    education: edu,
+    secondary: {
+      schools: schools,
+      ol: (d.olSubject || []).map((s, i) => ({ subject: s, grade: d.olGrade[i] })),
+      al: (d.alSubject || []).map((s, i) => ({ subject: s, grade: d.alGrade[i] }))
+    }
+  };
+}
+
+/* ===== Generate / Preview ===== */
+async function generateResume(){
+  // Lock the preview button when generation starts
+  isReadyForPreview = false;
+  updatePreviewButtonState();
+
+  const contentMode = document.querySelector('input[name="contentMode"]:checked')?.value;
+
+  // --- ORIGINAL CONTENT FLOW ---
+  if (contentMode === 'original') {
+    lastAIStructured = null;
+    
+    // Instantly unlock and turn green!
+    isReadyForPreview = true;
+    updatePreviewButtonState(); 
+    
+    outputEl.style.display = 'block';
+    outputEl.innerHTML = "<strong>Original Content Selected.</strong><br>Format prepared! Click <b style='color: #16a34a;'>'Preview Resume'</b> to design your resume.";
+    return;
+  }
+
+  // --- AI ENHANCED FLOW ---
+  // Use our new dynamic loading screen
+  openWait();
+  lastAIStructured = null;
+  openWait();
+  // Lock preview button while generating
+  lastAIStructured = null;           // <--- ADD THIS HERE
+  updatePreviewButtonState();
+  
+  try {
+    const payload = collectForm();
+    const resp = await fetch('/generate_resume', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    let data;
+    try { data = await resp.json(); }
+    catch { throw new Error('Bad JSON from server'); }
+
+    if (!resp.ok || data?.ok === false){
+      throw new Error(data?.error || `Server error (${resp.status})`);
+    }
+
+    lastAIStructured = data.structured || null;
+    outputEl.style.display = 'block';
+    outputEl.textContent = (data.markdown || "").trim() || "(No markdown returned.)";
+    
+    // ✅ Unlock the button because AI succeeded!
+    isReadyForPreview = true;
+    updatePreviewButtonState();
+
+    // ✅ SUCCESS SEQUENCE (Terminal finish -> Fade Message -> Close)
+    clearInterval(logInterval);
+    const logContainer = document.getElementById('logContainer');
+    const span = document.createElement('span');
+    span.textContent = "> ✅ ALL TASKS COMPLETED SUCCESSFULLY.";
+    span.style.color = "#10b981";
+    span.style.fontWeight = "bold";
+    logContainer.appendChild(span);
+    logContainer.scrollTop = logContainer.scrollHeight;
+
+    // Show Fading message
+    const successMsg = document.getElementById('successMessage');
+    successMsg.style.display = "block";
+    setTimeout(() => { successMsg.style.opacity = "1"; }, 50);
+
+    // Wait 2.5 seconds so the user can read the success message, then close
+    setTimeout(() => {
+       closeWait();
+    }, 2500);
+
+  } catch (err) {
+    // ❌ ERROR SEQUENCE
+    clearInterval(logInterval);
+    const logContainer = document.getElementById('logContainer');
+    const span = document.createElement('span');
+    span.textContent = `> ❌ SYSTEM ERROR: ${err.message || String(err)}`;
+    span.style.color = "#ef4444";
+    logContainer.appendChild(span);
+    logContainer.scrollTop = logContainer.scrollHeight;
+
+    setTimeout(() => { 
+        closeWait(); 
+        alert(err.message || String(err)); 
+    }, 1500);
+  }
+}
+
+
+
+
+/* ===== File → data URL (photo) ===== */
+/* ===== File → data URL (photo) with Client-Side Compression ===== */
+function compressImage(file, maxSize, callback) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            const MAX_WIDTH = maxSize;
+            const MAX_HEIGHT = maxSize;
+            let width = img.width;
+            let height = img.height;
+
+            // Maintain aspect ratio while shrinking
+            if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Export as compressed JPEG (80% quality)
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            callback(compressedDataUrl);
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+document.getElementById('photo').addEventListener('change', (e)=>{
+  const f = e.target.files?.[0];
+  const preview = document.getElementById('photoPreview');
+  const placeholder = document.getElementById('photoPlaceholder');
+
+  if (!f) { 
+      photoDataUrl = ""; 
+      if (preview) preview.style.display = "none"; 
+      if (placeholder) placeholder.style.display = "flex";
+      return; 
+  }
+  
+  // Compress to max 400px before saving to avoid localStorage quota errors
+  compressImage(f, 400, function(compressedBase64) {
+      photoDataUrl = compressedBase64;
+      if (preview) {
+          preview.src = photoDataUrl; 
+          preview.style.display = "block";
+      }
+      if (placeholder) {
+          placeholder.style.display = "none";
+      }
+  });
+});
+
+  // --- GENERATE BUTTON READINESS TRACKER ---
+  function checkGenerateReadiness() {
+      const requiredFields = document.querySelectorAll('#details-form [required]');
+      let isReady = true;
+
+      for (let field of requiredFields) {
+          // If a required field is currently visible and empty, the form is NOT ready
+          if (field.offsetParent !== null && !field.value.trim()) {
+              isReady = false;
+              break;
+          }
+      }
+
+      const genBtn = document.getElementById('generateBtn');
+      if (genBtn) {
+          if (isReady) {
+              genBtn.classList.add('btn-ready');
+              genBtn.innerHTML = "✨ Generate (Markdown)";
+          } else {
+              genBtn.classList.remove('btn-ready');
+              genBtn.innerHTML = "Generate (Markdown)";
+          }
+      }
+  }
+
+  // Listen to every keypress and dropdown change in the form
+  formEl.addEventListener('input', checkGenerateReadiness);
+  formEl.addEventListener('change', checkGenerateReadiness);
+
+/* ===== Initial bindings ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Template list + default name
+  loadTemplatesIntoSelect();
+
+  // Year dropdowns
+  fillYearOnly(document.getElementById('olYear'));
+  fillYearOnly(document.getElementById('alYear'));
+
+// Seed one block per section if empty
+  if ($$('#university-education-container .edu-block').length === 0) addEducation();
+  if ($$('#school-container .edu-block').length === 0) addSchool();
+  if ($$('#work-experience-container .edu-block').length === 0) addWorkExperience();
+  if ($$('#publications-container .edu-block').length === 0) addPublication();
+  if ($$('#extras-container .edu-block').length === 0) addExtraSection();
+  if ($$('#referees-container .edu-block').length === 0) addReferee();
+  if ($$('#ol-results-container .subject-result-row').length === 0) addOlResult();
+  if ($$('#al-results-container .subject-result-row').length === 0) addAlResult();
+  if ($$('#skills-list .skill-row').length === 0) addSkillRow();
+  
+  // 🚀 FIX: Added Certifications to the auto-seed list!
+  if ($$('#certList .cert-row').length === 0) addCertRow();
+
+  // Derived hint from slider
+  document.getElementById('creativity').addEventListener('input', updateDerivedHint);
+  document.getElementById('detailLevel').addEventListener('input', updateDerivedHint);
+  updateDerivedHint();
+  checkGenerateReadiness(); // 🚀 ADDED HERE
+
+  // --- ELEGANT TOAST NOTIFICATION ENGINE ---
+  function showErrorToast(title, message) {
+      // Create container if it doesn't exist
+      let container = document.getElementById('toast-container');
+      if (!container) {
+          container = document.createElement('div');
+          container.id = 'toast-container';
+          document.body.appendChild(container);
+      }
+
+      // Build the toast notification
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+          <svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div class="toast-content">
+              <p class="toast-title">${title}</p>
+              <p class="toast-message">${message}</p>
+          </div>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Trigger slide-in animation with a tiny delay
+      requestAnimationFrame(() => {
+          setTimeout(() => toast.classList.add('show'), 10);
+      });
+
+      // Remove after 4.5 seconds
+      setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 400); // Wait for slide-out transition
+      }, 4500);
+  }
+
+
+  // --- FORM VALIDATION ENGINE ---
+  function validateForm() {
+
+      // 🚀 NEW: Check Cloudflare CAPTCHA
+      const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
+      if (!turnstileResponse) {
+          showErrorToast("Security Check", "Please complete the 'I am human' CAPTCHA before generating.");
+          return false;
+      }
+
+      // 🚀 NEW: Check Privacy Consent FIRST
+      const consentBox = document.getElementById('privacyConsent');
+      if (consentBox && !consentBox.checked) {          showErrorToast("Consent Required", "Please agree to the Terms of Service and Privacy Policy before generating.");
+          consentBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return false;
+      }
+      const requiredFields = document.querySelectorAll('#details-form [required]');
+      for (let field of requiredFields) {
+          // Check if the field is visually on the screen (not hidden by General Mode)
+          if (field.offsetParent !== null && !field.value.trim()) {
+              let labelText = "";
+              // Find the label associated with the field
+              let label = document.querySelector(`label[for="${field.id}"]`);
+              if (!label) {
+                  // Fallback for dynamic elements like Skills or Certifications
+                  label = field.closest('div').querySelector('label');
+              }
+              
+              if (label) {
+                  // Clone label to safely remove the 'required' chips and get pure text
+                  const clone = label.cloneNode(true);
+                  const chips = clone.querySelectorAll('.chip');
+                  chips.forEach(c => c.remove());
+                  labelText = clone.textContent.trim();
+              } else if (field.placeholder) {
+                  labelText = field.placeholder;
+              } else {
+                  labelText = field.name;
+              }
+
+              // Fire the elegant toast message
+              showErrorToast("Missing Information", `Please fill out the required field: <b style="color: var(--ink);">${labelText}</b>`);
+              
+              // Smoothly auto-scroll the user to the missing field and blink the cursor!
+              field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              field.focus();
+              return false;
+          }
+      }
+      return true;
+  }
+
+
+
+  // Buttons
+  document.getElementById('addCertBtn')?.addEventListener('click', ()=> addCertRow());
+  
+  document.getElementById('generateBtn')?.addEventListener('click', (e)=>{ 
+      e.preventDefault(); 
+      if (validateForm()) generateResume(); // Only generates if validation passes
+  });
+  
+  document.getElementById('previewBtn')?.addEventListener('click', (e)=>{ e.preventDefault(); previewInTemplate(); });
+
+  // Enter key on form
+  formEl.addEventListener('submit', (e)=>{ 
+      e.preventDefault(); 
+      if (validateForm()) generateResume(); 
+  });
+  
+  // 🚀 NEW: Check if the template supports a photo!
+  applyPhotoSupportCheck();
+});
+
+/* ===== NEW: Layout Feature Support Check ===== */
+/* ===== NEW: Layout Feature Support Check (Bulletproof Version) ===== */
+async function applyPhotoSupportCheck() {
+    try {
+        // 1. Get the current template slug from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentSlug = urlParams.get('template');
+        
+        // 2. Fetch the templates list to accurately map the slug to the Folder Name
+        let folderName = currentSlug; 
+        try {
+            const tempRes = await fetch('/templates');
+            const tempList = await tempRes.json();
+            
+            if (!currentSlug && tempList.length > 0) currentSlug = tempList[0].slug;
+            
+            const matchedTemplate = tempList.find(t => t.slug === currentSlug);
+            if (matchedTemplate && matchedTemplate.name) {
+                folderName = matchedTemplate.name; // E.g., "New Custom Layout"
+            }
+        } catch(e) { 
+            // Silently ignore 
+        }
+
+        if (!currentSlug) return;
+
+        // 3. Try fetching the layout.json using the exact Folder Name
+        let fetchUrl = `/templates/resumes/${folderName}/layout.json`;
+        let res = await fetch(fetchUrl);
+        
+        // 4. FALLBACK: If the Name folder doesn't exist, try the Slug folder!
+        if (!res.ok) {
+            fetchUrl = `/templates/resumes/${currentSlug}/layout.json`;
+            res = await fetch(fetchUrl);
+        }
+        
+        if (!res.ok) {
+            return; 
+        }
+        
+        const layout = await res.json();
+        
+        // 5. Scan the JSON for photo support (Safely checking string binds to prevent crashes)
+        let hasPhoto = false;
+        if (layout.pages) {
+            for (const page of layout.pages) {
+                if (page.elements) {
+                    for (const el of page.elements) {
+                        if ((el.type === 'image' || el.type === 'photo') && 
+                            el.bind && typeof el.bind === 'string' && 
+                            (el.bind.includes('photo') || el.bind.includes('avatar'))) {
+                            hasPhoto = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasPhoto) break;
+            }
+        }
+
+        // 6. Update the UI perfectly every time
+        const uploader = document.getElementById('photoUploadContainer');
+        const message = document.getElementById('photoNotSupportedMessage');
+        const fileInput = document.getElementById('photo');
+
+        if (!hasPhoto) {
+            // HIDE the photo uploader
+            if (uploader) uploader.style.display = 'none'; 
+            if (message) message.style.display = 'flex'; 
+            if (fileInput) fileInput.disabled = true;
+        } else {
+            // SHOW the photo uploader (Safety reset)
+            if (uploader) uploader.style.display = 'flex'; 
+            if (message) message.style.display = 'none'; 
+            if (fileInput) fileInput.disabled = false;
+        }
+    } catch (err) {
+        // Silently ignore crashes here to not break the page
+    }
+}
+
+/* ===== UI rules ===== */
+/* ===== UI rules ===== */
+function updatePreviewButtonState() {
+  const btn = document.getElementById('previewBtn');
+  if (!btn) return;
+  
+  if (isReadyForPreview) {
+    // Unlocked & Green
+    btn.disabled = false;
+    btn.classList.add('btn-ready');
+    btn.textContent = "Preview Resume";
+  } else {
+    // Locked & Grey
+    btn.disabled = true;
+    btn.classList.remove('btn-ready');
+    btn.textContent = "Preview (Generate First)";
+  }
+}
+
+/* ===== UI rules =====
+   - Original Content:
+       * Disable AI controls. Hide Job Title + Description. Show "Professional Summary".
+   - AI Enhanced (General resume):
+       * Enable AI controls. Hide Job Title + Description. Show "Professional Summary".
+   - AI Enhanced (Job-specific resume):
+       * Enable AI controls. Show Job Title, Job Description, and "Why You Fit".
+*/
+function updateJobTargetUI(){
+  const contentMode  = document.querySelector('input[name="contentMode"]:checked')?.value; 
+  const resumeTarget = document.querySelector('input[name="resumeTarget"]:checked')?.value; 
+
+  // Controls we need to disable/enable
+  const targetRadios = document.querySelectorAll('input[name="resumeTarget"]');
+  const creativity   = document.getElementById('creativity');
+  const toneCrisp    = document.getElementById('tone_crisp');
+
+  // Job section fields
+  const jobRow = document.getElementById('job-target-row');
+  if (!jobRow) return;
+
+  const jt = document.getElementById('jobTitle');
+  const jd = document.getElementById('jobDescription');
+  const wf = document.getElementById('whyFit');
+  const h2 = jobRow.querySelector('h2');
+  const wfLabel = document.querySelector(`label[for="whyFit"]`);
+
+  // Helper to completely hide or show a field and its label
+  const setFieldVisibility = (el, show) => {
+    if (!el) return;
+    el.style.display = show ? '' : 'none';
+    const label = document.querySelector(`label[for="${el.id}"]`);
+    if (label) label.style.display = show ? '' : 'none';
+  };
+
+  // Ensure the section itself is always visible
+  jobRow.style.display = ''; 
+
+  if (contentMode === 'original') {
+    // -------- 1) ORIGINAL MODE --------
+    targetRadios.forEach(r => r.disabled = true);
+    if (creativity) creativity.disabled = true;
+    if (toneCrisp) toneCrisp.disabled = true;
+
+    if (h2) h2.innerHTML = "Professional Summary";
+    if (wfLabel) wfLabel.innerHTML = `Summary / Objective <span class="chip">required</span>`;
+
+    if (jt){ jt.required = false; jt.disabled = true; setFieldVisibility(jt, false); }
+    if (jd){ jd.required = false; jd.disabled = true; setFieldVisibility(jd, false); }
+    if (wf){ wf.required = true; wf.disabled = false; setFieldVisibility(wf, true); } 
+
+  } else {
+    // -------- 2) AI ENHANCED MODE --------
+    targetRadios.forEach(r => r.disabled = false);
+    if (creativity) creativity.disabled = false;
+    if (toneCrisp) toneCrisp.disabled = false;
+
+    if (resumeTarget === 'job') {
+        // A) JOB-SPECIFIC
+        if (h2) h2.innerHTML = "Job Applying For";
+        if (wfLabel) wfLabel.innerHTML = `Why You Fit This Job <span class="chip">required • 50–180 words</span>`;
+
+        if (jt){ jt.required = true; jt.disabled = false; setFieldVisibility(jt, true); }
+        if (jd){ jd.required = true; jd.disabled = false; setFieldVisibility(jd, true); }
+        if (wf){ wf.required = true; wf.disabled = false; setFieldVisibility(wf, true); }
+
+        // Restore stashed values if they clicked back and forth
+        if (jt && !jt.value && jobRow.dataset.savedJobTitle) jt.value = jobRow.dataset.savedJobTitle;
+        if (jd && !jd.value && jobRow.dataset.savedJobDescription) jd.value = jobRow.dataset.savedJobDescription;
+        if (wf && !wf.value && jobRow.dataset.savedWhyFit) wf.value = jobRow.dataset.savedWhyFit;
+
+    } else {
+        // B) GENERAL RESUME
+        if (h2) h2.innerHTML = "Professional Summary";
+        if (wfLabel) wfLabel.innerHTML = `Summary / Objective <span class="chip">required</span>`;
+
+        // Hide Job Title & Description, but stash their values safely
+        if (jt){ 
+            jobRow.dataset.savedJobTitle = jt.value || ""; 
+            jt.value = ""; 
+            jt.required = false; jt.disabled = true; setFieldVisibility(jt, false); 
+        }
+        if (jd){ 
+            jobRow.dataset.savedJobDescription = jd.value || ""; 
+            jd.value = ""; 
+            jd.required = false; jd.disabled = true; setFieldVisibility(jd, false); 
+        }
+        
+        // Keep the Summary box visible!
+        if (wf){ wf.required = true; wf.disabled = false; setFieldVisibility(wf, true); }
+    }
+  }
+  
+  // Relock the button when they switch modes so they must generate again
+  isReadyForPreview = false;
+  updatePreviewButtonState();
+  checkGenerateReadiness();
+}
+/* ===== Hook to radio changes ===== */
+document.querySelectorAll('input[name="contentMode"], input[name="resumeTarget"]').forEach(r => {
+  r.addEventListener('change', updateJobTargetUI);
+});
+
+// Run once on load to set correct initial state
+updateJobTargetUI();
+
+
+</script>
+
+<script>
+// Build text blocks for the editor (experience, education, secondary, certs, pubs, referees)
+function buildEditorBlocks(data){
+    // shallow copy so we don't mutate original structured object
+    const d = { ...(data || {}) };
+
+    // small helper: turn any "bullets" field (string/array, with possible newlines & leading - / •)
+    // into a clean array of plain lines (no bullet chars, no duplicates)
+    function normalizeBulletLines(raw){
+      const out  = [];
+      const seen = new Set();
+
+      if (raw == null) return out;
+
+      const pushFromString = (str) => {
+        String(str).split(/\r?\n/).forEach(line => {
+          let t = line.trim();
+          if (!t) return;
+          // strip any user-added bullets like "- ", "• ", "* "
+          t = t.replace(/^[-–•*]+\s*/, "").trim();
+          if (!t || seen.has(t)) return;
+          seen.add(t);
+          out.push(t);
+        });
+      };
+
+      if (Array.isArray(raw)){
+        raw.forEach(v => pushFromString(v));
+      } else {
+        pushFromString(raw);
+      }
+      return out;
+    }
+
+    // ---------- EXPERIENCE → experienceText ----------
+    const workArr = Array.isArray(d.work)
+      ? d.work
+      : (Array.isArray(d.experience) ? d.experience : []);
+
+    if (workArr && workArr.length){
+      const blocks = workArr.map(w => {
+        if (!w || typeof w !== "object") return "";
+
+        const lines = [];
+
+        const title    = (w.title    || "").trim();
+        const company  = (w.company  || "").trim();
+        const location = (w.location || "").trim();
+
+        const headerParts = [];
+        if (title)   headerParts.push(title);
+        if (company) headerParts.push(company);
+        if (location) headerParts.push(location);
+
+        const header = headerParts.join(" — ");
+        if (header) lines.push(header);
+
+        let period = (w.period || "").trim();
+        if (!period){
+          const from = (w.from || "").trim();
+          const to   = (w.to   || "").trim();
+          if (from || to){
+            period = from && to ? `${from} – ${to}` : (from || to);
+          }
+        }
+        if (period) lines.push(period);
+
+        // bullets may be array OR a few long strings with line breaks
+        const bulletLines = normalizeBulletLines(w.bullets || []);
+        bulletLines.forEach(t => lines.push(`• ${t}`));
+
+        return lines.join("\n");
+      }).filter(Boolean);
+
+      d.experienceText = blocks.join("\n\n");
+    }
+
+    // ---------- EDUCATION → educationText ----------
+    // Turn structured education list into a big text block for the editor
+    const eduArr = Array.isArray(d.education) ? d.education : [];
+        if (eduArr && eduArr.length){
+          const blocks = eduArr.map(ed => {
+            if (!ed || typeof ed !== "object") return "";
+
+            const lines = [];
+
+            const degree = (ed.degree || ed.title || ed.program || "").trim();
+            const inst = (ed.institution || ed.school || ed.university || "").trim();
+
+            const headerParts = [];
+            if (degree) headerParts.push(degree);
+            if (inst)   headerParts.push(inst);
+
+            const header = headerParts.join(" — ");
+            if (header) lines.push(header);
+
+            // period: prefer ed.period, else from/to
+            let period = (ed.period || "").trim();
+            if (!period){
+              const f = (ed.from || "").trim();
+              const t = (ed.to   || "").trim();
+              if (f || t){
+                period = (f && t) ? `${f} – ${t}` : (f || t);
+              }
+            }
+            if (period) lines.push(period);
+
+            // bullets: bullets / research / highlights / details
+            const src = ed.bullets || ed.research || ed.highlights || ed.details || [];
+            const arr = Array.isArray(src) ? src : [src];
+
+            arr.forEach(b => {
+              let t = (b || "").trim();
+              if (!t) return;
+
+              // strip any user-typed "-" / "•" / "*" at the start
+              t = t.replace(/^[-*•]+\s*/, "").trim();
+              if (!t) return;
+
+              // use the same bullet style as Experience
+              lines.push(`• ${t}`);
+            });
+            return lines.join("\n");
+          }).filter(Boolean);
+
+          d.educationText = blocks.join("\n\n");
+        }
+
+    // ---------- SECONDARY EDUCATION → secondaryText ----------
+    const sec = d.secondary || {};
+    const schools = Array.isArray(sec.schools) ? sec.schools : [];
+    const olList  = Array.isArray(sec.ol) ? sec.ol : [];
+    const alList  = Array.isArray(sec.al) ? sec.al : [];
+
+    const secLines = [];
+
+    // Schools
+    if (schools.length){
+      schools.forEach(s => {
+        const name   = (s.name   || "").trim();
+        const period = (s.period || "").trim();
+        if (!name && !period) return;
+
+        let line = name;
+        if (period) line += ` — ${period}`;
+        secLines.push(line);
+      });
+      secLines.push(""); // blank line after schools
+    }
+
+    // A/L block
+    if (alList.length){
+      secLines.push("A/L");
+      alList.forEach(sub => {
+        const subj  = (sub.subject || "").trim();
+        const grade = (sub.grade   || "").trim();
+        if (!subj && !grade) return;
+
+        let line = `• ${subj}`;
+        if (grade) line += ` — ${grade}`;
+        secLines.push(line);
+      });
+      secLines.push(""); // blank line after A/L
+    }
+
+    // O/L block
+    if (olList.length){
+      secLines.push("O/L");
+      olList.forEach(sub => {
+        const subj  = (sub.subject || "").trim();
+        const grade = (sub.grade   || "").trim();
+        if (!subj && !grade) return;
+
+        let line = `• ${subj}`;
+        if (grade) line += ` — ${grade}`;
+        secLines.push(line);
+      });
+    }
+
+    if (secLines.length){
+      d.secondaryText = secLines.join("\n");
+    }
+
+    // ---------- SKILLS → skills (HTML with dot indicators for preview/editor) ----------
+    (function(){
+      // Prefer structured skills from form / AI:
+      // d.skillsStructured (camelCase) or d.skills_structured (snake_case)
+      let structured = [];
+      if (Array.isArray(d.skillsStructured) && d.skillsStructured.length){
+        structured = d.skillsStructured;
+      } else if (Array.isArray(d.skills_structured) && d.skills_structured.length){
+        structured = d.skills_structured;
+      }
+
+      // Normalize to objects { name, level5, level100, level }
+      let items = [];
+      if (structured.length){
+        items = structured.map(s => {
+          if (!s) return null;
+          if (typeof s === "string"){
+            return { name: s.trim(), level5: 2, level100: 50 };
+          }
+          if (typeof s === "object"){
+            return s;
+          }
+          return null;
+        }).filter(Boolean);
+      } else {
+        // Fallback: use d.skills as names (string/array) with neutral level
+        let namesRaw = [];
+        if (Array.isArray(d.skills)){
+          namesRaw = d.skills;
+        } else if (typeof d.skills === "string" && d.skills.trim()){
+          namesRaw = d.skills.split(/\r?\n|,|;/);
+        }
+        items = namesRaw.map(n => ({
+          name: String(n || "").trim(),
+          level5: 2,
+          level100: 50
+        })).filter(x => x.name);
+      }
+
+      if (!items.length) return;
+
+      // ---------- Split into NAMES and DOTS ----------
+
+      // Names-only list (plain text, one per line)
+      const namesOnly = items
+        .map(s => (s && s.name) ? String(s.name).trim() : "")
+        .filter(Boolean);
+
+      // Dots-only list (HTML, one line per skill)
+      const dotsOnly = items.map(s => {
+        const name = (s && s.name) ? String(s.name).trim() : "";
+        if (!name) return "";
+
+        let rating = null; // 1..5
+
+        // 0..4 slider-style (form uses level5)
+        if (typeof s.level5 === "number" && !Number.isNaN(s.level5)){
+          rating = s.level5 + 1;
+        }
+        // explicit numeric level 1..5
+        else if (typeof s.level === "number" && !Number.isNaN(s.level)){
+          rating = s.level;
+        }
+        // percentage 0..100 → map to 1..5
+        else if (typeof s.level100 === "number" && !Number.isNaN(s.level100)){
+          rating = Math.round((s.level100 / 100) * 4) + 1;
+        }
+        // level as string: "Advanced (4/5)" or "Intermediate"
+        else if (typeof s.level === "string"){
+          const lvl = s.level.trim();
+          const m = lvl.match(/([0-5])\s*\/\s*5/);
+          if (m){
+            rating = parseInt(m[1], 10);
+          } else {
+            const lower = lvl.toLowerCase();
+            if (lower.includes("novice"))        rating = 1;
+            else if (lower.includes("beginner")) rating = 2;
+            else if (lower.includes("intermediate")) rating = 3;
+            else if (lower.includes("advanced"))    rating = 4;
+            else if (lower.includes("expert"))      rating = 5;
+          }
+        }
+
+        // fallback: middle 3/5
+        if (rating == null) rating = 3;
+
+        // clamp 1..5
+        rating = Math.max(1, Math.min(5, rating));
+
+        const dots = [];
+        for (let i = 1; i <= 5; i++){
+          const filled = i <= rating;
+          dots.push(`<span class="skill-dot ${filled ? "filled" : "empty"}"></span>`);
+        }
+
+        return `<span class="skill-dots" data-level="${rating}">${dots.join("")}</span>`;
+      }).filter(Boolean);
+
+      // LEFT side → names only
+      d.skillsText = namesOnly.join("\n");
+      d.skills     = d.skillsText;   // keep base skills clean
+
+      // RIGHT side → dots only (HTML, one line per skill)
+      d.skillsDots = dotsOnly.join("\n");
+    })();
+
+
+
+
+
+    // ---------- CERTIFICATIONS → certificationsText ----------
+    const certArr = Array.isArray(d.certifications) ? d.certifications : [];
+    if (certArr && certArr.length){
+      const blocks = certArr.map(c => {
+        if (!c || typeof c !== "object") return "";
+
+        const lines = [];
+
+        const name   = (c.name   || c.title || "").trim();
+        const issuer = (c.issuer || c.provider || c.organization || "").trim();
+
+        const headerParts = [];
+        if (name)   headerParts.push(name);
+        if (issuer) headerParts.push(issuer);
+        const header = headerParts.join(" — ");
+        if (header) lines.push(header);
+
+        const issued  = (c.issue || c.issued || "").trim();
+        const expires = (c.expiry || c.expires || "").trim();
+        const credId  = (c.credential_id || "").trim();
+
+        const metaBits = [];
+        if (issued) metaBits.push(issued);
+        if (expires) metaBits.push(`Expires: ${expires}`);
+
+        const meta = metaBits.join(" • ");
+        if (meta) lines.push(meta);
+        
+        // 🚀 FIX: Push the Credential ID onto its own new line!
+        if (credId) lines.push(`ID: ${credId}`);
+        const desc = (c.description || c.details || "").trim();
+        if (desc) lines.push(desc);
+
+        const url = (c.url || c.link || "").trim();
+        if (url) lines.push(url);
+
+        return lines.join("\n");
+      }).filter(Boolean);
+
+      d.certificationsText = blocks.join("\n\n");
+    }
+
+    // ---------- PUBLICATIONS → publicationsText ----------
+    const pubArr = Array.isArray(d.publications) ? d.publications : [];
+    if (pubArr && pubArr.length){
+      const blocks = pubArr.map(p => {
+        if (!p || typeof p !== "object") return "";
+
+        const lines = [];
+
+        const title = (p.title || "").trim();
+        if (title) lines.push(title);
+
+        const venue = (p.venue || p.journal || p.conference || "").trim();
+        if (venue) lines.push(venue);
+
+        const date = (p.date || p.year || "").trim();
+        if (date) lines.push(date);
+
+        const desc = (p.description || p.summary || "").trim();
+        if (desc) lines.push(desc);
+
+        const url = (p.url || p.link || "").trim();
+        if (url) lines.push(url);
+
+        return lines.join("\n");
+      }).filter(Boolean);
+
+      d.publicationsText = blocks.join("\n\n");
+    }
+
+    // ---------- EXTRAS → extrasText (HTML for colored headings) ----------
+    const extrasArr = Array.isArray(d.extras) ? d.extras : [];
+    if (extrasArr && extrasArr.length){
+      const blocks = extrasArr.map(sec => {
+        if (!sec || typeof sec !== "object") return "";
+
+        const lines = [];
+
+        const title = (sec.name || "").trim();
+        if (title){
+          lines.push(`<span style="color:#0ea5e9; font-weight:800;">${title}</span>`);
+        }
+
+        const desc = (sec.description || "").trim();
+        if (desc){
+          const rawLines = desc.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+          rawLines.forEach(t => {
+            t = t.replace(/^[-*•]\s*/, "").trim();
+            if (t) lines.push(`- ${t}`);
+          });
+        }
+
+        return lines.join("<br>");
+      }).filter(Boolean);
+
+      d.extrasText = blocks.join("<br><br>");
+    }
+
+    // ---------- REFEREES → refereesText ----------
+    // ---------- REFEREES → refereesText ----------
+    const refArr = Array.isArray(d.referees) ? d.referees : [];
+    if (refArr && refArr.length){
+      const blocks = refArr.map(r => {
+        if (!r || typeof r !== "object") return "";
+
+        const lines = [];
+
+        const name = (r.name || "").trim();
+        const role = (r.role || r.position || "").trim();
+        const org  = (r.organization || r.company || "").trim();
+
+        const headerParts = [];
+        if (name) headerParts.push(name);
+        if (role) headerParts.push(role);
+        if (org)  headerParts.push(org);
+        const header = headerParts.join(" — ");
+        if (header) lines.push(header);
+
+        const email = (r.email || "").trim();
+        const phone = (r.phone || r.mobile || "").trim();
+        if (email || phone){
+          const contact = [
+            email ? `Email: ${email}` : "",
+            phone ? `Mobile: ${phone}` : ""
+          ].filter(Boolean).join(" | ");
+          if (contact) lines.push(contact);
+        }
+
+        return lines.join("\n");
+      }).filter(Boolean);
+
+      d.refereesText = blocks.join("\n\n");
+    }
+
+    return d;
+  }
+
+
+
+
+
+async function previewInTemplate(){
+  openWait("Loading editor…");
+  try{
+    const theme = document.getElementById('templateSelect')?.value || "";
+
+    // 1. Get Base Data
+    // If AI data exists, use it. Otherwise, get raw form data.
+    let baseData = (typeof lastAIStructured !== 'undefined' && lastAIStructured)
+      ? lastAIStructured
+      : collectForm();
+
+    // ============================================================
+    // CRITICAL FIX: Structure "Original Content" Data
+    // ============================================================
+    // This block runs ONLY when we are in "Original" mode (no AI data).
+    if (!lastAIStructured) {
+      const d = baseData; 
+      const getVal = (arr, i) => (arr && arr[i]) ? arr[i] : "";
+      const getMonth = (m) => MONTHS[parseInt(m) - 1] || "";
+
+      // --- FIX 1: PROFILE / SUMMARY ---
+      d.summary = d.whyFit || ""; 
+      d.objective = d.whyFit || "";
+      d.profile = d.whyFit || "";
+      d.summaryText = d.whyFit || "";
+
+      // --- FIX 2: CERTIFICATIONS ---
+      d.certifications = [];
+      const lenC = (d.certName || []).length;
+      for (let i = 0; i < lenC; i++) {
+         const name = d.certName[i] || "";
+         const issuer = d.certIssuer[i] || "";
+         // 🚀 FIX: Skip empty blocks!
+         if (!name.trim() && !issuer.trim()) continue; 
+
+         const iMonth = d.certIssueMonth[i] ? MONTHS[parseInt(d.certIssueMonth[i])-1] : "";
+         const iYear  = d.certIssueYear[i] || "";
+         const xMonth = d.certExpireMonth[i] ? MONTHS[parseInt(d.certExpireMonth[i])-1] : "";
+         const xYear  = d.certExpireYear[i] || "";
+
+         const issued  = (iMonth || iYear) ? `${iMonth} ${iYear}`.trim() : "";
+         const expires = (xMonth || xYear) ? `${xMonth} ${xYear}`.trim() : "";
+
+         const noExpiry = String((d.certNoExpiry && d.certNoExpiry[i]) || "").toLowerCase();
+         d.certifications.push({
+             name: name,
+             issuer: issuer,
+             issue: issued,
+             expiry: (noExpiry === "on" || noExpiry === "true" || noExpiry === "1") ? "" : expires,
+             credential_id: (d.certId && d.certId[i]) ? d.certId[i] : "",
+             url: (d.certUrl && d.certUrl[i]) ? d.certUrl[i] : "",
+             description: (d.certDescription && d.certDescription[i]) ? d.certDescription[i] : ""
+         });
+      }
+
+      // --- FIX 3: WORK EXPERIENCE ---
+      d.work = [];
+      const lenW = (d.jobTitleExp || []).length;
+      for (let i = 0; i < lenW; i++) {
+        const title = d.jobTitleExp[i] || "";
+        const company = d.company[i] || "";
+        const desc = d.workDescription[i] || "";
+        // 🚀 FIX: Skip empty blocks!
+        if (!title.trim() && !company.trim() && !desc.trim()) continue;
+
+        const from = `${getMonth(d.workFromMonth[i])} ${d.workFromYear[i] || ''}`.trim();
+        const to = `${getMonth(d.workToMonth[i])} ${d.workToYear[i] || ''}`.trim();
+        d.work.push({
+          title: title,
+          company: company,
+          location: "",
+          period: (from || to) ? `${from} – ${to}` : "",
+          bullets: desc
+        });
+      }
+
+      // --- FIX 4: EDUCATION ---
+      d.education = [];
+      const lenE = (d.eduUniversity || []).length;
+      for (let i = 0; i < lenE; i++) {
+        const uni = d.eduUniversity[i] || "";
+        const prog = d.eduProgram[i] || "";
+        const details = d.eduResearch[i] || "";
+        // 🚀 FIX: Skip empty blocks!
+        if (!uni.trim() && !prog.trim() && !details.trim()) continue;
+
+        const from = `${getMonth(d.eduFromMonth[i])} ${d.eduFromYear[i] || ''}`.trim();
+        const to = `${getMonth(d.eduToMonth[i])} ${d.eduToYear[i] || ''}`.trim();
+        d.education.push({
+          institution: uni,
+          degree: (d.eduType[i] || "") + " " + prog,
+          period: (from || to) ? `${from} – ${to}` : "",
+          details: details
+        });
+      }
+
+      // --- FIX 5: SECONDARY SCHOOLS ---
+      const schools = [];
+      const lenS = (d.schoolName || []).length;
+      for (let i = 0; i < lenS; i++) {
+        const name = d.schoolName[i] || "";
+        // 🚀 FIX: Skip empty blocks!
+        if (!name.trim()) continue;
+
+        const from = `${getMonth(d.schoolFromMonth[i])} ${d.schoolFromYear[i] || ''}`.trim();
+        const to = `${getMonth(d.schoolToMonth[i])} ${d.schoolToYear[i] || ''}`.trim();
+        schools.push({
+          name: name,
+          period: (from || to) ? `${from} – ${to}` : ""
+        });
+      }
+      
+      const ol = (d.olSubject || []).map((s, i) => ({ subject: s, grade: d.olGrade[i] }))
+                                   .filter(x => (x.subject && x.subject.trim()) || (x.grade && x.grade.trim()));
+      const al = (d.alSubject || []).map((s, i) => ({ subject: s, grade: d.alGrade[i] }))
+                                   .filter(x => (x.subject && x.subject.trim()) || (x.grade && x.grade.trim()));
+
+      // 🚀 NEW FIX: If everything is empty, set it to an empty array so studio.html can hide it!
+      if (schools.length === 0 && ol.length === 0 && al.length === 0) {
+          d.secondary = []; 
+      } else {
+          d.secondary = { schools: schools, ol: ol, al: al };
+      }
+
+      // --- FIX 6: PUBLICATIONS ---
+      d.publications = [];
+      const lenP = (d.pubTitle || []).length;
+      for (let i = 0; i < lenP; i++) {
+         const title = d.pubTitle[i] || "";
+         const venue = d.pubVenue[i] || "";
+         // 🚀 FIX: Skip empty blocks!
+         if (!title.trim() && !venue.trim()) continue;
+
+         d.publications.push({
+             title: title,
+             venue: venue,
+             date: `${getMonth(d.pubMonth[i])} ${d.pubYear[i] || ''}`.trim(),
+             url: d.pubLink[i]
+         });
+      }
+
+      // --- FIX 7: REFEREES ---
+      d.referees = [];
+      const lenR = (d.refName || []).length;
+      for (let i = 0; i < lenR; i++) {
+        const name = d.refName[i] || "";
+        const role = d.refPosition[i] || "";
+        // 🚀 FIX: Skip empty blocks!
+        if (!name.trim() && !role.trim()) continue;
+
+        d.referees.push({
+            name: name,
+            role: role,
+            email: d.refEmail[i],
+            phone: d.refMobile[i]
+        });
+      }
+
+      // --- FIX 8: CONTACT INFO ---
+      if (!baseData.contact) {
+        baseData.contact = {
+          name: baseData.fullName || "",
+          full_name: baseData.fullName || "", 
+          email: baseData.email || "",
+          phone: baseData.phone || "",
+          location: baseData.address || "", 
+          address: baseData.address || "",
+          website: baseData.portfolio || "",
+          portfolio: baseData.portfolio || "",
+          linkedin: baseData.linkedin || "",
+          github: baseData.github || "",
+          title: baseData.jobTitle || "",
+          summary: d.summary 
+        };
+      } else {
+        baseData.contact.summary = d.summary;
+        if (!baseData.contact.full_name) baseData.contact.full_name = baseData.contact.name;
+      }
+
+      // --- FIX 9: EXTRAS ---
+      d.extras = [];
+      const lenEx = (d.extraName || []).length;
+      for (let i = 0; i < lenEx; i++) {
+        const name = d.extraName[i] || "";
+        const desc = d.extraDescription[i] || "";
+        // 🚀 FIX: Skip empty blocks!
+        if (!name.trim() && !desc.trim()) continue;
+
+        d.extras.push({
+          name: name,
+          description: desc
+        });
+      }
+
+    } // <--- END of "if (!lastAIStructured)" block
+
+
+    // ============================================================
+    // GLOBAL FIX: ENFORCE JOB TITLE VISIBILITY
+    // ============================================================
+    
+    // 1. Safety check: Ensure contact object exists
+    if (!baseData.contact) baseData.contact = {};
+
+    // 2. Get current settings
+    const _mode = document.querySelector('input[name="contentMode"]:checked')?.value;
+    // Default to 'general' if null
+    const _target = document.querySelector('input[name="resumeTarget"]:checked')?.value || "general"; 
+    const _rawTitle = document.getElementById('jobTitle')?.value || "";
+
+// 3. Data Logic: Set text values based on selection
+    if (_mode === 'ai' && _target === 'job') {
+        // SHOW: Force set the title in every possible field
+        baseData.contact.current_title = _rawTitle;
+        baseData.contact.title = _rawTitle;
+        baseData.contact.label = _rawTitle; 
+        baseData.jobTitle = _rawTitle;      
+    } else {
+        // 🚀 NEW FEATURE: Fallback to the most recent Job Title!
+        let fallbackTitle = "";
+        const workArr = Array.isArray(baseData.work) ? baseData.work : (Array.isArray(baseData.experience) ? baseData.experience : []);
+        
+        if (workArr.length > 0) {
+            let mostRecentTitle = workArr[0].title || "";
+            let maxYear = -1;
+
+            for (let w of workArr) {
+                if (!w.title) continue;
+                let period = (w.period || w.date || "").toLowerCase();
+
+                // Priority 1: If the job says "Present", "Current", or "Now"
+                if (period.includes("present") || period.includes("current") || period.includes("now")) {
+                    fallbackTitle = w.title;
+                    break;
+                }
+
+                // Priority 2: Extract the highest year from the period string
+                let years = period.match(/\b(19|20)\d{2}\b/g);
+                if (years && years.length > 0) {
+                    let year = parseInt(years[years.length - 1], 10);
+                    if (year > maxYear) {
+                        maxYear = year;
+                        mostRecentTitle = w.title;
+                    }
+                }
+            }
+            // If no "Present" job was found, use the one with the highest year
+            if (!fallbackTitle) fallbackTitle = mostRecentTitle;
+        }
+
+        // Apply the fallback title instead of leaving it blank
+        baseData.contact.current_title = fallbackTitle;
+        baseData.contact.title = fallbackTitle;
+        baseData.contact.label = fallbackTitle;
+        baseData.jobTitle = fallbackTitle;
+    }
+    // 4. CRITICAL: Pass the target flag to the Base Data
+    // This allows studio.html to detect "general" and completely REMOVE the element
+    baseData.resumeTarget = _target;
+    // ============================================================
+
+
+    // 3. Handle Photo (if uploaded)
+    if (typeof photoDataUrl !== "undefined" && photoDataUrl){
+      baseData.photo = photoDataUrl;
+      baseData.avatar_data_url = photoDataUrl;
+      if(baseData.contact) {
+          baseData.contact.photo = photoDataUrl;
+          baseData.contact.avatar_data_url = photoDataUrl;
+      }
+    }
+
+// =========================================================================
+    // 🚀 FALLBACK ENGINE: NO HIGHER EDUCATION
+    // If the user has no university degrees, map Certs & Secondary Ed 
+    // into the main Education block BEFORE we build the text blocks!
+    // =========================================================================
+    if (!baseData.education || baseData.education.length === 0) {
+        let fallback_edu = [];
+        
+        // 1. Map Certifications (FIRST - So they appear at the top!)
+        let certs = baseData.certifications || [];
+        certs.forEach(c => {
+            let bullets = [];
+            if (c.description) {
+                c.description.split(/\r?\n/).forEach(line => {
+                    let l = line.trim();
+                    if (l) bullets.push(l);
+                });
+            }
+            
+            if (c.credential_id) {
+                bullets.push(`ID: ${c.credential_id}`);
+            }
+            
+            // 🚀 FIX: Ensure the URL is pushed to the screen in the Fallback Engine!
+            if (c.url) {
+                bullets.push(`${c.url}`);
+            }
+            
+            let period_bits = [c.issue, c.expiry].filter(Boolean);
+            
+            fallback_edu.push({
+                type: "Certification",
+                university: c.issuer || "",
+                program: c.name || "",
+                grade: "", gpa: "", thesis: "",
+                period: period_bits.join(" – "),
+                research: bullets,
+                degree_name: c.name || "",
+                degree_and_type: c.name || ""
+            });
+        });
+
+        // 2. Map Secondary Education (SECOND - Grouped to bring schools closer!)
+        let sec = baseData.secondary || {};
+        let schools = sec.schools || [];
+        let ol_list = sec.ol || [];
+        let al_list = sec.al || [];
+        
+        if (schools.length > 0 || ol_list.length > 0 || al_list.length > 0) {
+            if (schools.length === 0) {
+                schools = [{ name: "Secondary Education", period: "" }];
+            }
+
+            // 🚀 FIX 1: Assign stacked schools to 'university' so the template doesn't hide them!
+            let schools_stacked = schools.map(sch => {
+                let line = sch.name || "";
+                if (sch.period) line += ` (${sch.period})`;
+                return line;
+            }).join("\n");
+
+            let combined_bullets = [];
+
+            // 🚀 FIX 2: Text Padding Engine for perfect column alignment (Removes the dash!)
+            const padSubject = (subject) => {
+                let needed = 35 - subject.length; // Pads all subjects to exactly 35 characters wide
+                return needed > 0 ? "\u00A0".repeat(needed) : " \u00A0 ";
+            };
+            // Group A/L Results into a single block
+            if (al_list.length > 0) {
+                let al_block = `<b><u>Advanced Level Results:</u></b>`;
+                al_list.forEach(subj => {
+                    let sname = (subj.subject || "").trim();
+                    let grade = (subj.grade || "").trim();
+                    // 🚀 FIX: We use our secret ||| delimiter instead of spaces!
+                    if (sname) al_block += `\n   ${sname}` + (grade ? `|||${grade}` : "");
+                });
+                combined_bullets.push(al_block);
+            }
+            
+            // Group O/L Results into a single block
+            if (ol_list.length > 0) {
+                let ol_block = `<b><u>Ordinary Level Results:</u></b>`;
+                ol_list.forEach(subj => {
+                    let sname = (subj.subject || "").trim();
+                    let grade = (subj.grade || "").trim();
+                    // 🚀 FIX: We use our secret ||| delimiter instead of spaces!
+                    if (sname) ol_block += `\n   ${sname}` + (grade ? `|||${grade}` : "");
+                });
+                combined_bullets.push(ol_block);
+            }
+
+            // Push ALL schools as the main header fields so they show up and stack perfectly!
+            fallback_edu.push({
+                type: "Secondary Education",
+                university: schools_stacked,      // <-- This makes the schools visible!
+                program: "", grade: "", gpa: "", thesis: "",
+                period: "", 
+                research: combined_bullets,
+                degree_name: schools_stacked,
+                degree_and_type: schools_stacked 
+            });
+        }
+        
+        // 3. Overwrite empty education and clear originals to prevent duplicates
+        baseData.education = fallback_edu;
+        baseData.secondary = { schools: [], ol: [], al: [] };
+        baseData.certifications = [];
+    }
+    // =========================================================================
+
+    // 4. Generate Text Blocks for Editor
+    baseData = buildEditorBlocks(baseData);
+
+    // 5. Send to Editor
+    const contentMode  = document.querySelector('input[name="contentMode"]:checked')?.value || "original";
+    const resumeTarget = document.querySelector('input[name="resumeTarget"]:checked')?.value || "general";
+
+    const payload = {
+      theme,
+      contentMode,     // "original" | "ai"
+      resumeTarget,    // "general"  | "job"
+      data: baseData
+    };
+
+    localStorage.setItem('resumeEditorPayload', JSON.stringify(payload));
+    
+    const eidSlug = theme || "exprimental-json";
+    window.location.href = `/studio/${encodeURIComponent(eidSlug)}`;
+
+  } catch (err){
+    console.error(err);
+    alert(err.message || String(err));
+  } finally {
+    closeWait();
+  }
+}
+
+
+</script>
+
+
+
+
+
+
+
+</body>
+</html>

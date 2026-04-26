@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>SVG Preview</title>
+<style>
+  :root { --a4w: 794px; --a4h: 1123px; }
+  html, body { margin:0; background:#f3f4f6; }
+  header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #e5e7eb;
+           padding:10px 16px; display:flex; gap:12px; align-items:center; }
+  .sp { flex:1; }
+  .btn { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:9px 12px; cursor:pointer; }
+  .btn.ghost { background:#fff; color:#2563eb; border:1px solid #2563eb; }
+
+  /* A4 page frame */
+  .stack { width:var(--a4w); margin:16px auto; }
+  .page  { width:var(--a4w); height:var(--a4h); background:#fff; box-shadow:0 6px 18px rgba(0,0,0,.08);
+           border-radius:10px; overflow:hidden; margin:18px 0; }
+  .page > svg { display:block; width:var(--a4w); height:var(--a4h); }
+
+  @page { size: A4; margin: 12mm; }
+  @media print {
+    html, body { background:#fff; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    header { display:none; }
+    .stack { width:auto; margin:0; }
+    .page  { box-shadow:none; border-radius:0; margin:0; page-break-after:always; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <strong>SVG Preview</strong>
+    <span class="sp"></span>
+    <button class="btn" onclick="window.print()">Print</button>
+  </header>
+
+  <div id="mount" class="stack"></div>
+
+  <script>
+  (async () => {
+    const payload = {{ {'theme':theme, 'data':data}|tojson }};
+    const r = await fetch('/generate_resume_svg', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if (!j.ok) { document.getElementById('mount').textContent = j.error || 'Render error'; return; }
+
+    const root = document.getElementById('mount');
+    root.innerHTML = '';
+    (j.pages || []).forEach(svg => {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.innerHTML = svg;
+      root.appendChild(page);
+    });
+  })();
+  </script>
+</body>
+</html>
