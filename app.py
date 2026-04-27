@@ -30,7 +30,7 @@ from dotenv import load_dotenv, find_dotenv
 from werkzeug.exceptions import HTTPException
 from flask import (
     Flask, jsonify, request, abort, send_file,
-    render_template, url_for, make_response, send_from_directory, redirect  # ← add redirect
+    render_template, url_for, make_response, send_from_directory, redirect, session, render_template_string
 )
 from playwright.sync_api import sync_playwright
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -87,6 +87,64 @@ app = Flask(
     template_folder=str(APP_TEMPLATES),
     static_folder=str(STATIC_DIR),
 )
+
+# Create a secure session key
+app.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
+
+# The password to unlock the site (if not set, the site is public)
+SITE_PASSWORD = os.getenv("SITE_PASSWORD") 
+
+@app.before_request
+def check_site_password():
+    # If no password is set in the environment, let everyone in
+    if not SITE_PASSWORD:
+        return
+        
+    # Always allow access to static files (CSS/JS) and the login page
+    if request.endpoint in ['login', 'static']:
+        return
+        
+    # If they are not logged in, redirect them to the login page
+    if session.get('site_unlocked') != True:
+        return redirect(url_for('login', next=request.url))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ""
+    if request.method == 'POST':
+        if request.form.get('password') == SITE_PASSWORD:
+            session['site_unlocked'] = True
+            next_url = request.args.get('next') or url_for('home')
+            return redirect(next_url)
+        else:
+            error = "<p style='color:red;'>Incorrect password.</p>"
+
+    # A very simple, clean login screen (no extra HTML file needed)
+    return render_template_string(f'''
+    <!doctype html>
+    <html lang="en">
+    <head>
+        <title>Private Beta</title>
+        <style>
+            body {{ font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f3f4f6; }}
+            .box {{ background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }}
+            input[type="password"] {{ padding: 10px; width: 80%; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; }}
+            input[type="submit"] {{ padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }}
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <h2>Website is currently in Private Beta</h2>
+            {error}
+            <form method="post">
+                <input type="password" name="password" placeholder="Enter Developer Password" required>
+                <br><br>
+                <input type="submit" value="Unlock Site">
+            </form>
+        </div>
+    </body>
+    </html>
+    ''')
 
 # =============================================================================
 # (Optional) OpenAI client (safe fallback if not configured)
