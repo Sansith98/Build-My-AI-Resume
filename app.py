@@ -158,11 +158,10 @@ _edu_rw      = EducationRewriter(api_key="", model="")
 
 
 
-try:
-    from openai import OpenAI
-    _openai_client = OpenAI(api_key=OPENAI_API_KEY) if (OPENAI_API_KEY and not _DISABLE_OPENAI) else None
-except Exception:
-    _openai_client = None
+print(f"DEBUG - KEY LENGTH: {len(OPENAI_API_KEY)}")
+print(f"DEBUG - DISABLE FLAG: {_DISABLE_OPENAI}")
+from openai import OpenAI
+_openai_client = OpenAI(api_key=OPENAI_API_KEY) if (OPENAI_API_KEY and not _DISABLE_OPENAI) else None
 
 
 
