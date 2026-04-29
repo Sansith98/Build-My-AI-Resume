@@ -38,7 +38,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dotenv import load_dotenv
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = find_dotenv(usecwd=True) or os.path.join(BASE_DIR, ".env")
-load_dotenv(ENV_PATH, override=True)
+load_dotenv(ENV_PATH, override=False)
 
 # =============================================================================
 # Paths & Flask
