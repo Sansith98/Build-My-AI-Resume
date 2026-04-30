@@ -198,10 +198,18 @@ def _health():
     return jsonify(ok=True, roots=[str(p) for p in _template_roots()])
 
 # =============================================================================
-# Export (preview → export)
+# Export (preview → export) - FIXED FOR MULTI-WORKER
 # =============================================================================
-EXPORT_STORE: Dict[str, Dict[str, Any]] = {}
+import os, tempfile, json
+
+EXPORT_DIR = os.path.join(tempfile.gettempdir(), "resume_exports")
+os.makedirs(EXPORT_DIR, exist_ok=True)
 EXPORT_TTL_SEC = 60 * 60 * 24 * 7  # 7 days
+
+def _save_to_disk(eid, data_dict):
+    file_path = os.path.join(EXPORT_DIR, f"{eid}.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data_dict, f)
 
 @app.post("/api/save_export")
 def save_export():
@@ -209,17 +217,29 @@ def save_export():
     html  = data.get("html", "")
     slug  = data.get("slug", "resume")
     eid   = secrets.token_urlsafe(16)
-    EXPORT_STORE[eid] = {"ts": time.time(), "slug": slug, "html": html, "structured": {}}
+    
+    _save_to_disk(eid, {"ts": time.time(), "slug": slug, "html": html, "structured": {}})
     return jsonify(ok=True, eid=eid)
 
-
-
 def _get_export_payload(eid: str) -> Dict[str, Any]:
-    item = EXPORT_STORE.get(eid)
-    if not item:
+    if not eid or "/" in eid or "\\" in eid:
         abort(404)
-    if (time.time() - item["ts"]) > EXPORT_TTL_SEC:
-        EXPORT_STORE.pop(eid, None); abort(404)
+        
+    file_path = os.path.join(EXPORT_DIR, f"{eid}.json")
+    if not os.path.exists(file_path):
+        abort(404)
+        
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            item = json.load(f)
+    except Exception:
+        abort(404)
+        
+    if (time.time() - item.get("ts", 0)) > EXPORT_TTL_SEC:
+        try: os.remove(file_path)
+        except: pass
+        abort(404)
+        
     return item
 
 
@@ -2967,7 +2987,7 @@ def preview_template():
         return make_response(err, 200)
 
     eid = secrets.token_urlsafe(16)
-    EXPORT_STORE[eid] = {"ts": time.time(), "slug": slug, "structured": structured, "html": html}
+    _save_to_disk(eid, {"ts": time.time(), "slug": slug, "structured": structured, "html": html})
 
     shell = f"""<!doctype html>
 <html lang="en"><head>
