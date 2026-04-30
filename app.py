@@ -100,8 +100,8 @@ def check_site_password():
     if not SITE_PASSWORD:
         return
         
-    # Always allow access to static files (CSS/JS) and the login page
-    if request.endpoint in ['login', 'static']:
+    # Always allow access to static files (CSS/JS), the login page, and the invisible PDF bot
+    if request.endpoint in ['login', 'static', 'export_headless']:
         return
         
     # If they are not logged in, redirect them to the login page
