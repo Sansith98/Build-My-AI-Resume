@@ -3163,14 +3163,13 @@ def export_hq_pdf(eid):
     import re
     from playwright.sync_api import sync_playwright
 
-    # 1. Grab the HTML locally (Bypasses the Server Deadlock entirely!)
+    # 1. Grab the HTML locally
     item = _get_export_payload(eid)
     raw_html = item.get("html", "")
     html_content = "\n".join(raw_html) if isinstance(raw_html, list) else str(raw_html)
     
     css_injection = """
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
       html, body { 
           margin: 0 !important; padding: 0 !important; background: #fff !important; 
@@ -3220,19 +3219,34 @@ def export_hq_pdf(eid):
             )
             page = context.new_page()
 
+            # 🚀 THE ANTI-DEADLOCK ROUTER
+            # This intercepts image/asset requests and reads them directly from the hard drive!
+            def intercept_route(route):
+                url = route.request.url
+                # Serve static files (like uploaded avatars) instantly
+                if "/static/" in url:
+                    filepath = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
+                    if os.path.exists(filepath):
+                        return route.fulfill(path=filepath)
+                # Serve template files (like SVG icons) instantly
+                elif "/templates/" in url:
+                    filepath = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
+                    if os.path.exists(filepath):
+                        return route.fulfill(path=filepath)
+                
+                # Instantly kill broken localhost links so the server doesn't hang
+                if "127.0.0.1" in url or "localhost" in url:
+                    return route.abort()
+                    
+                route.continue_()
+
+            page.route("**/*", intercept_route)
+
             # 2. Inject HTML directly into Playwright
-            page.set_content(final_html, wait_until="networkidle", timeout=30000)
+            # Changed to "load" and added a strict timeout so it literally cannot spin forever
+            page.set_content(final_html, wait_until="load", timeout=15000)
 
-            # Wait for ALL fonts to fully load
-            page.evaluate("""async () => {
-                await document.fonts.ready;
-                document.body.getBoundingClientRect();
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-                const allFonts = [...document.fonts];
-                await Promise.all(allFonts.map(f => f.loaded.catch(() => null)));
-            }""")
-
-            page.wait_for_timeout(2500)
+            page.wait_for_timeout(1000)
             page.emulate_media(media="screen")
 
             page.pdf(
