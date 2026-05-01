@@ -3138,6 +3138,7 @@ def export_headless(eid):
           -moz-osx-font-smoothing: grayscale !important;
           text-rendering: optimizeLegibility !important;
           font-kerning: normal !important;
+          font-family: 'Inter', sans-serif !important;
       }
       svg {
           overflow: hidden !important;
