@@ -3105,15 +3105,7 @@ def export_headless(eid):
           height: auto !important; overflow: visible !important; 
           -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
       }
-      /* Compensate for Chromium PDF colour desaturation — shapes and backgrounds only */
-      .shape-el, .background-shape, .rect-el, .rounded-rect-el, .ellipse-el,
-      .design-el:not(.text-el) {
-          filter: saturate(1.14) contrast(1.05) !important;
-      }
-      .a4 > div[style*="background"],
-      .a4 > div[style*="background-color"] {
-          filter: saturate(1.14) contrast(1.05) !important;
-      }
+      
       /* 🚀 FIX 1: Blank Second Page Fix. Un-trap editor positioning. */
       body > div, .app-root, #root {
           position: static !important;
@@ -3153,67 +3145,9 @@ def export_headless(eid):
           shape-rendering: geometricPrecision !important;
           text-rendering: geometricPrecision !important;
       }
-      text, tspan {
-          text-rendering: geometricPrecision !important;
-          font-kerning: normal !important;
-          paint-order: stroke fill !important;
-          stroke-linejoin: round !important;
-      }
-      /* White text presence — adds body without blurring the glyph */
-      text[fill="#ffffff"], tspan[fill="#ffffff"] {
-          stroke: #ffffff !important;
-          stroke-width: 0.35px !important;
-          stroke-opacity: 0.55 !important;
-      }
-      text[fill="#f7f7f7"], tspan[fill="#f7f7f7"],
-      text[fill="#d1d5db"], tspan[fill="#d1d5db"] {
-          stroke: #f7f7f7 !important;
-          stroke-width: 0.3px !important;
-          stroke-opacity: 0.45 !important;
-      }
-      /* Dark text presence */
-      text[fill="#050505"], tspan[fill="#050505"],
-      text[fill="#0a0a0a"], tspan[fill="#0a0a0a"],
-      text[fill="#111827"], tspan[fill="#111827"],
-      text[fill="#374151"], tspan[fill="#374151"] {
-          stroke: currentColor !important;
-          stroke-width: 0.25px !important;
-          stroke-opacity: 0.4 !important;
-      }
       img {
           image-rendering: high-quality !important;
           image-rendering: -webkit-optimize-contrast !important;
-      }
-
-      /* 🚀 TEXT PRESENCE FIX: simulate screen luminosity without blurring */
-      /* White text on dark backgrounds — adds body without softening edges */
-      text[fill="#ffffff"], text[fill="#fff"],
-      tspan[fill="#ffffff"], tspan[fill="#fff"] {
-          paint-order: stroke fill !important;
-          stroke: #ffffff !important;
-          stroke-width: 0.35px !important;
-          stroke-linejoin: round !important;
-          stroke-opacity: 0.55 !important;
-      }
-      /* Near-white text (e.g. #f7f7f7, #d1d5db) */
-      text[fill="#f7f7f7"], tspan[fill="#f7f7f7"],
-      text[fill="#d1d5db"], tspan[fill="#d1d5db"] {
-          paint-order: stroke fill !important;
-          stroke: #f7f7f7 !important;
-          stroke-width: 0.3px !important;
-          stroke-linejoin: round !important;
-          stroke-opacity: 0.45 !important;
-      }
-      /* Dark text on light backgrounds */
-      text[fill="#050505"], tspan[fill="#050505"],
-      text[fill="#111827"], tspan[fill="#111827"],
-      text[fill="#0a0a0a"], tspan[fill="#0a0a0a"],
-      text[fill="#374151"], tspan[fill="#374151"] {
-          paint-order: stroke fill !important;
-          stroke: currentColor !important;
-          stroke-width: 0.25px !important;
-          stroke-linejoin: round !important;
-          stroke-opacity: 0.4 !important;
       }
     </style>   """    
     

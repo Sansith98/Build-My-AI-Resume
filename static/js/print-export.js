@@ -273,14 +273,19 @@
             const resp = await fetch(href);
             let css = await resp.text();
             
-            // Embed every woff2 as base64 — Playwright needs zero network calls for fonts
+            // Embed every woff2 as base64 safely (prevents call stack crash)
             const woff2Urls = [...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m => m[1]);
             for (const woff2Url of woff2Urls) {
               try {
                 const fontResp = await fetch(woff2Url);
-                const fontBuffer = await fontResp.arrayBuffer();
-                const base64 = btoa(String.fromCharCode(...new Uint8Array(fontBuffer)));
-                css = css.replace(`url(${woff2Url})`, `url(data:font/woff2;base64,${base64})`);
+                const blob = await fontResp.blob();
+                const base64Url = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.readAsDataURL(blob);
+                });
+                // Replace the Google URL directly with the generated Data URL
+                css = css.replace(woff2Url, base64Url);
               } catch (e) {}
             }
             return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
@@ -430,7 +435,6 @@
     img {
       image-rendering: high-quality !important;
       image-rendering: -webkit-optimize-contrast !important;
-      filter: contrast(1.04) saturate(1.05) !important;
     }
   </style>
 </head>
