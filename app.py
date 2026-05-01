@@ -3133,14 +3133,22 @@ def export_headless(eid):
           overflow: hidden !important;
       }
 
-      /* 🚀 SHARPNESS FIXES */
+      /* 🚀 SHARPNESS FIXES & LINUX OVERRIDES (Applies instantly to ALL pages) */
       * {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
           text-rendering: optimizeLegibility !important;
           font-kerning: normal !important;
           font-family: 'Inter', sans-serif !important;
+          letter-spacing: -0.015em !important;
+          word-spacing: -0.015em !important;
       }
+      
+      /* 🚀 SIZE & OVERLAP FIX: Shrinks text slightly to match local Mac/Windows widths */
+      svg text, svg tspan {
+          font-size: 97.5% !important;
+      }
+
       svg {
           overflow: hidden !important;
           max-height: 1123px !important;
@@ -3207,11 +3215,6 @@ def export_hq_pdf(eid):
             page.goto(target_url, wait_until="networkidle", timeout=30000)
             page.wait_for_load_state("domcontentloaded")
 
-            # Inject a micro letter-spacing correction to match local Chrome font metrics
-            page.add_style_tag(content="""
-                .a4 * { letter-spacing: -0.015em !important; }
-                .a4 p, .a4 span, .a4 div, .a4 text, .a4 tspan { word-spacing: -0.015em !important; }
-            """)
 
             # Wait for ALL fonts to fully load including Google Fonts woff2 downloads
             page.evaluate("""async () => {

@@ -303,7 +303,8 @@
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
         const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // Inline layout properties, but REMOVE rigid dimensions and fontSize
+        // Inline layout properties, but REMOVE rigid width/height and fontSize
+        // This stops the text boxes from crushing the text and forcing it to wrap!
         const INLINE_PROPS = [
           'position','display','top','left','right','bottom',
           'minWidth','minHeight','maxWidth','maxHeight',
