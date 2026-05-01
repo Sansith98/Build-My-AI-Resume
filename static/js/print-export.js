@@ -303,24 +303,25 @@
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
         const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // Inline every layout+visual property so the clone needs zero external CSS
+        // Inline layout properties, but REMOVE rigid dimensions and typography
+        // This allows the Linux browser to use the CSS naturally without sub-pixel wrapping issues
         const INLINE_PROPS = [
           'position','display','top','left','right','bottom',
-          'width','height','minWidth','minHeight','maxWidth','maxHeight',
+          /* Removed rigid dimensions to prevent wrapping bugs */
           'margin','marginTop','marginRight','marginBottom','marginLeft',
           'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
           'boxSizing','overflow','overflowX','overflowY',
           'flexDirection','flexWrap','alignItems','justifyContent',
           'flex','flexGrow','flexShrink','flexBasis','gap',
           'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
-          'fontSize','fontFamily','fontWeight','fontStyle',
-          'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
+          /* Removed typography to prevent zoom-scaling bugs */
+          'fontWeight','fontStyle',
+          'textAlign','textTransform','whiteSpace',
           'color','backgroundColor','background',
           'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
           'opacity','zIndex','transform','transformOrigin',
           'fill','stroke','strokeWidth',
         ];
-
         for (let i = 0; i < liveEls.length; i++) {
           const live = liveEls[i];
           const cloneEl = cloneEls[i];
