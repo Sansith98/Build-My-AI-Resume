@@ -297,43 +297,35 @@
       const linkTags = inlinedFontStyles.join("\n");
 
       
-// 5. Build self-contained page clones with ALL computed styles inlined
+// 5. Build self-contained page clones safely without double-measuring
       const allPagesHTML = Array.from(pageEls).map((pageEl) => {
         const clone = pageEl.cloneNode(true);
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
         const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // Inline layout properties, but REMOVE rigid width/height and fontSize
-        // This stops the text boxes from crushing the text and forcing it to wrap!
-        // Inline EVERY layout+visual property so the clone matches the preview EXACTLY
-        const INLINE_PROPS = [
-          'position','display','top','left','right','bottom',
-          'width','height','minWidth','minHeight','maxWidth','maxHeight',
-          'margin','marginTop','marginRight','marginBottom','marginLeft',
-          'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
-          'boxSizing','overflow','overflowX','overflowY',
-          'flexDirection','flexWrap','alignItems','justifyContent',
-          'flex','flexGrow','flexShrink','flexBasis','gap',
-          'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
-          'fontSize','fontFamily','fontWeight','fontStyle',
-          'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
-          'color','backgroundColor','background',
-          'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
-          'opacity','zIndex','transform','transformOrigin',
-          'fill','stroke','strokeWidth',
-        ];        for (let i = 0; i < liveEls.length; i++) {
+        const rootStyles = getComputedStyle(document.documentElement);
+        
+        for (let i = 0; i < liveEls.length; i++) {
           const live = liveEls[i];
           const cloneEl = cloneEls[i];
           if (!cloneEl) continue;
 
-          const computed = window.getComputedStyle(live);
-          for (const prop of INLINE_PROPS) {
-            try {
-              const val = computed[prop];
-              if (val && val !== '' && val !== 'auto' && val !== 'normal' && val !== 'none') {
-                cloneEl.style[prop] = val;
+          // 🚀 ONLY COPY CSS VARIABLES (Required for Skill Dots)
+          const liveStyle = live.getAttribute('style') || '';
+          const varMatches = [...liveStyle.matchAll(/var\((--[^)]+)\)/g)];
+          varMatches.forEach(match => {
+            const varName = match[1].trim();
+            const val = getComputedStyle(live).getPropertyValue(varName).trim() || rootStyles.getPropertyValue(varName).trim();
+            if (val) cloneEl.style.setProperty(varName, val);
+          });
+          if (live.style && live.style.length) {
+            for (let p = 0; p < live.style.length; p++) {
+              const prop = live.style[p];
+              if (prop.startsWith('--')) {
+                const val = live.style.getPropertyValue(prop);
+                if (val) cloneEl.style.setProperty(prop, val);
               }
-            } catch(e) {}
+            }
           }
 
           // Clean editor UI artifacts
@@ -342,43 +334,10 @@
           if (cloneEl.style.boxShadow && cloneEl.style.boxShadow.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
         }
 
-        // Inline CSS custom properties (variables) — getComputedStyle misses these
-        // This fixes --dot-size, --bar-height, --bar-width and any other CSS vars
-        const allLiveEls = Array.from(pageEl.querySelectorAll('*'));
-        const allCloneEls = Array.from(clone.querySelectorAll('*'));
-        const rootStyles = getComputedStyle(document.documentElement);
-        
-        allLiveEls.forEach((liveEl, i) => {
-          const cloneEl = allCloneEls[i];
-          if (!cloneEl) return;
-          const liveStyle = liveEl.getAttribute('style') || '';
-          // Extract any --variable references from inline styles and resolve them
-          const varMatches = [...liveStyle.matchAll(/var\((--[^)]+)\)/g)];
-          varMatches.forEach(match => {
-            const varName = match[1].trim();
-            // Try element first, then root
-            const val = getComputedStyle(liveEl).getPropertyValue(varName).trim() 
-                     || rootStyles.getPropertyValue(varName).trim();
-            if (val) {
-              cloneEl.style.setProperty(varName, val);
-            }
-          });
-          // Also copy any custom properties set directly on the element
-          if (liveEl.style && liveEl.style.length) {
-            for (let p = 0; p < liveEl.style.length; p++) {
-              const prop = liveEl.style[p];
-              if (prop.startsWith('--')) {
-                const val = liveEl.style.getPropertyValue(prop);
-                if (val) cloneEl.style.setProperty(prop, val);
-              }
-            }
-          }
-        });
-
         // Remove editor-only elements
         clone.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(el => el.remove());
 
-        // Lock the page to exact dimensions — use setProperty to avoid wiping inlined styles
+        // Lock the page to exact dimensions
         clone.style.setProperty('position', 'relative', 'important');
         clone.style.setProperty('width', '794px', 'important');
         clone.style.setProperty('height', '1123px', 'important');

@@ -3098,6 +3098,9 @@ def export_headless(eid):
     
     css_injection = """
     <style>
+      /* 🚀 FORCE FONT DOWNLOAD TO PREVENT LINUX FALLBACKS */
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
       /* 🚀 PDF GLOBAL RESET */
       @page { size: 794px 1123px; margin: 0; }
       
@@ -3105,44 +3108,35 @@ def export_headless(eid):
           margin: 0 !important; padding: 0 !important; background: #fff !important; 
           height: auto !important; overflow: visible !important; 
           -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
+          font-family: 'Inter', sans-serif !important;
       }
       
-      /* 🚀 FIX 1: Blank Second Page Fix. Un-trap editor positioning. */
+      /* 🚀 FIX 1: Blank Second Page Fix. */
       body > div, .app-root, #root {
-          position: static !important;
-          overflow: visible !important;
-          height: auto !important;
-          width: auto !important;
-          background: transparent !important;
-          padding: 0 !important;
-          margin: 0 !important;
+          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
+          background: transparent !important; padding: 0 !important; margin: 0 !important;
       }
 
       /* 🚀 FIX 2: Page clip fix. */
       .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
-          page-break-after: always !important;
-          break-after: page !important;
-          display: block !important;
-          position: relative !important;
-          transform: none !important;
-          zoom: 1 !important;
-          width: 794px !important;
-          height: 1123px !important;
+          page-break-after: always !important; break-after: page !important;
+          display: block !important; position: relative !important; transform: none !important; zoom: 1 !important;
+          width: 794px !important; height: 1123px !important;
           margin: 0 !important; padding: 0 !important;
-          box-shadow: none !important; border: none !important;
-          overflow: hidden !important;
+          box-shadow: none !important; border: none !important; overflow: hidden !important;
       }
 
-      /* 🚀 FIX 3: THE KERNING SCALPEL */
-      /* Targets your specific HTML text divs and squeezes the letters slightly so Linux 
-         fits them into the boxes without overriding your carefully calculated font sizes! */
-      .a4 * {
+      /* 🚀 FIX 3: TEXT WRAPPING SAFETY NET */
+      /* This allows inner text divs to stretch slightly if Linux needs 1-2 extra pixels, preventing line breaks */
+      .text, .normal-line, .bullet-line {
+          min-width: 102% !important; 
+          overflow: visible !important;
+      }
+
+      * {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
           text-rendering: optimizeLegibility !important;
-          font-kerning: normal !important;
-          font-family: 'Inter', sans-serif !important;
-          letter-spacing: -0.015em !important;
       }
     </style>
     """  
