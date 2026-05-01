@@ -3209,8 +3209,8 @@ def export_hq_pdf(eid):
 
             # Inject a micro letter-spacing correction to match local Chrome font metrics
             page.add_style_tag(content="""
-                .a4 * { letter-spacing: -0.01em !important; }
-                .a4 p, .a4 span, .a4 div { word-spacing: -0.01em !important; }
+                .a4 * { letter-spacing: -0.015em !important; }
+                .a4 p, .a4 span, .a4 div, .a4 text, .a4 tspan { word-spacing: -0.015em !important; }
             """)
 
             # Wait for ALL fonts to fully load including Google Fonts woff2 downloads

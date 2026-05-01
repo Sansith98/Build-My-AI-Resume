@@ -303,24 +303,23 @@
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
         const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // Inline every layout+visual property so the clone needs zero external CSS
+        // Inline layout properties, but REMOVE rigid dimensions and fontSize
         const INLINE_PROPS = [
           'position','display','top','left','right','bottom',
-          'width','height','minWidth','minHeight','maxWidth','maxHeight',
+          'minWidth','minHeight','maxWidth','maxHeight',
           'margin','marginTop','marginRight','marginBottom','marginLeft',
           'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
           'boxSizing','overflow','overflowX','overflowY',
           'flexDirection','flexWrap','alignItems','justifyContent',
           'flex','flexGrow','flexShrink','flexBasis','gap',
           'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
-          'fontSize','fontFamily','fontWeight','fontStyle',
+          'fontFamily','fontWeight','fontStyle',
           'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
           'color','backgroundColor','background',
           'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
           'opacity','zIndex','transform','transformOrigin',
           'fill','stroke','strokeWidth',
         ];
-
         for (let i = 0; i < liveEls.length; i++) {
           const live = liveEls[i];
           const cloneEl = cloneEls[i];
