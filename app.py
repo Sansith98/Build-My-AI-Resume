@@ -11,6 +11,7 @@ import os
 import re
 import json
 import time
+import sys
 import base64
 import tempfile
 import secrets
@@ -3222,9 +3223,11 @@ def export_hq_pdf(eid):
 
             # DEBUGGER: set headless=False above and uncomment to visually inspect
             #page.pause()
+            
+            # 📸 SECRETE DEBUG SCREENSHOT: 
+            page.screenshot(path="/tmp/pw_debug.png", full_page=True)
 
-            page.pdf(
-                path=pdf_path,
+            page.pdf(                path=pdf_path,
                 print_background=True,
                 margin={
                     "top": "0px",
@@ -3267,7 +3270,17 @@ def serve_sitemap():
 # =============================================================================
 # Run & Font Downloader
 # =============================================================================
-import sys
+
+@app.route('/debug/screenshot')
+def debug_screenshot():
+    import os
+    from flask import send_file
+    if os.path.exists('/tmp/pw_debug.png'):
+        return send_file('/tmp/pw_debug.png', mimetype='image/png')
+    return "No screenshot yet", 404
+
+
+
 if '--download-fonts' in sys.argv:
     import requests, re
     from pathlib import Path
@@ -3291,6 +3304,10 @@ if '--download-fonts' in sys.argv:
     print("All fonts downloaded to static/fonts/")
     sys.exit(0)
 
+
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=False)
+
