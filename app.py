@@ -3253,7 +3253,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',
+                    '--font-render-hinting=full',
                 ]
             )
 

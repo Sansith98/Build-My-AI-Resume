@@ -281,101 +281,62 @@
       const linkTags = inlinedFontStyles.join("\n");
 
       
-// 5. Clean ALL page clones — strip editor UI artifacts from each
+// 5. Build self-contained page clones with ALL computed styles inlined
       const allPagesHTML = Array.from(pageEls).map((pageEl) => {
         const clone = pageEl.cloneNode(true);
+        const liveEls  = Array.from(pageEl.querySelectorAll('*'));
+        const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // 🚀 THE GLOBAL ENHANCER: Mathematically boosts contrast for Text, Shapes, and SVGs safely
-        const targetSelector = 'p, span, h1, h2, h3, h4, h5, h6, li, a, text, tspan, .text-el, .shape-el, .background-shape, div, svg, path, rect, circle, polygon, line';
-        const liveEls = pageEl.querySelectorAll(targetSelector);
-        const cloneEls = clone.querySelectorAll(targetSelector);
+        // Inline every layout+visual property so the clone needs zero external CSS
+        const INLINE_PROPS = [
+          'position','display','top','left','right','bottom',
+          'width','height','minWidth','minHeight','maxWidth','maxHeight',
+          'margin','marginTop','marginRight','marginBottom','marginLeft',
+          'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
+          'boxSizing','overflow','overflowX','overflowY',
+          'flexDirection','flexWrap','alignItems','justifyContent',
+          'flex','flexGrow','flexShrink','flexBasis','gap',
+          'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
+          'fontSize','fontFamily','fontWeight','fontStyle',
+          'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
+          'color','backgroundColor','background',
+          'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
+          'opacity','zIndex','transform','transformOrigin',
+          'fill','stroke','strokeWidth',
+        ];
 
         for (let i = 0; i < liveEls.length; i++) {
-          const liveEl = liveEls[i];
+          const live = liveEls[i];
           const cloneEl = cloneEls[i];
+          if (!cloneEl) continue;
 
-          const computed = window.getComputedStyle(liveEl);
-          
-          const processColor = (rgbStr, property, isTextNode) => {
-            if (!rgbStr || rgbStr === 'none' || !rgbStr.startsWith('rgb') || rgbStr === 'rgba(0, 0, 0, 0)') return;
-            const match = rgbStr.match(/\d+/g);
-            if (!match || match.length < 3) return;
-            let [r, g, b] = match.map(Number);
+          const computed = window.getComputedStyle(live);
+          for (const prop of INLINE_PROPS) {
+            try {
+              const val = computed[prop];
+              if (val && val !== '' && val !== 'auto' && val !== 'normal' && val !== 'none') {
+                cloneEl.style[prop] = val;
+              }
+            } catch(e) {}
+          }
 
-            // 1. IS IT WHITE TEXT? Use paint-order stroke trick for PDF presence without blur
-            if (isTextNode && r > 200 && g > 200 && b > 200) {
-                if (property === 'fill' || property === 'stroke') {
-                    cloneEl.style.setProperty('fill', 'rgb(255, 255, 255)', 'important');
-                    cloneEl.style.setProperty('stroke', 'rgb(255, 255, 255)', 'important');
-                    cloneEl.style.setProperty('stroke-width', '0.35px', 'important');
-                    cloneEl.style.setProperty('stroke-linejoin', 'round', 'important');
-                    cloneEl.style.setProperty('stroke-opacity', '0.55', 'important');
-                    cloneEl.style.setProperty('paint-order', 'stroke fill', 'important');
-                } else if (property === 'color') {
-                    cloneEl.style.setProperty('color', 'rgb(255, 255, 255)', 'important');
-                    cloneEl.style.setProperty('-webkit-text-stroke', '0.35px rgba(255, 255, 255, 0.55)', 'important');
-                    // NO text-shadow — it blurs the glyph edge in Playwright PDF output
-                }
-                return;
-            }
-
-            // 2. NON-WHITE TEXT: minimal colour boost, preserve natural weight
-            if (isTextNode) {
-                const avg = (r + g + b) / 3;
-                r = Math.round(avg + (r - avg) * 1.03);
-                g = Math.round(avg + (g - avg) * 1.03);
-                b = Math.round(avg + (b - avg) * 1.03);
-                r = Math.min(255, Math.max(0, Math.round(r * 0.99)));
-                g = Math.min(255, Math.max(0, Math.round(g * 0.99)));
-                b = Math.min(255, Math.max(0, Math.round(b * 0.99)));
-                if (property === 'color') {
-                    cloneEl.style.setProperty('color', `rgb(${r}, ${g}, ${b})`, 'important');
-                } else if (property === 'fill') {
-                    cloneEl.style.setProperty('fill', `rgb(${r}, ${g}, ${b})`, 'important');
-                }
-                return;
-            }
-
-            // 3. SHAPES & BACKGROUNDS ONLY: Enhance Saturation & Density
-            // (Skip pure white backgrounds so we don't accidentally darken the paper)
-            if (r > 245 && g > 245 && b > 245) return;
-
-            // Boost Saturation by 8% for richer colors (Blues get bluer, Reds get redder)
-            const avg = (r + g + b) / 3;
-            r = avg + (r - avg) * 1.08;
-            g = avg + (g - avg) * 1.08;
-            b = avg + (b - avg) * 1.08;
-
-            // Darken by 4% to increase "ink density" (ensures text NEVER fades, shapes get punchy)
-            r = Math.min(255, Math.max(0, Math.floor(r * 0.96)));
-            g = Math.min(255, Math.max(0, Math.floor(g * 0.96)));
-            b = Math.min(255, Math.max(0, Math.floor(b * 0.96)));
-
-            cloneEl.style.setProperty(property, `rgb(${r}, ${g}, ${b})`, 'important');
-          };
-
-          const tagName = liveEl.tagName.toUpperCase();
-          const isTextNode = ['P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'A', 'TEXT', 'TSPAN'].includes(tagName) || liveEl.classList.contains('text-el');
-
-          // Apply math securely to every vector element
-          processColor(computed.color, 'color', isTextNode);
-          processColor(computed.backgroundColor, 'background-color', false);
-          processColor(computed.fill, 'fill', isTextNode);
-          processColor(computed.stroke, 'stroke', isTextNode);
+          // Clean editor UI artifacts
+          cloneEl.classList.remove("active", "multi", "editing");
+          if (cloneEl.style.outline && cloneEl.style.outline.includes('rgb(59')) cloneEl.style.outline = 'none';
+          if (cloneEl.style.boxShadow && cloneEl.style.boxShadow.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
         }
 
-        // Clean up UI artifacts from the clone + force subpixel rendering on all text
-        clone.querySelectorAll('*').forEach(el => {
-          el.classList.remove("active", "multi", "editing");
-          if (el.style.outline) el.style.outline = "none";
-          if (el.style.boxShadow && el.style.boxShadow.includes("rgb(59")) {
-            el.style.boxShadow = "none";
-          }
-          // Force subpixel font rendering inline — overrides any stylesheet antialiased setting
-          el.style.setProperty('-webkit-font-smoothing', 'subpixel-antialiased', 'important');
-          el.style.setProperty('-moz-osx-font-smoothing', 'auto', 'important');
-        });
+        // Remove editor-only elements
         clone.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(el => el.remove());
+
+        // Lock the page to exact dimensions
+        clone.style.cssText = `
+          position: relative !important; width: 794px !important; height: 1123px !important;
+          overflow: hidden !important; margin: 0 !important; padding: 0 !important;
+          box-shadow: none !important; outline: none !important; border: none !important;
+          transform: none !important; page-break-after: always !important; break-after: page !important;
+        `;
+
         return clone.outerHTML;
       }).join("\n");
 
