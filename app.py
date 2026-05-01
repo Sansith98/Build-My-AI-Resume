@@ -3290,7 +3290,6 @@ def export_hq_pdf(eid):
 
             page.pdf(
                 path=pdf_path,
-                format="A4",
                 print_background=True,
                 margin={
                     "top": "0px",
@@ -3300,8 +3299,7 @@ def export_hq_pdf(eid):
                 },
                 prefer_css_page_size=True,
                 scale=1.0
-            )
-            browser.close()
+            )            browser.close()
 
         return send_file(
             pdf_path, 
