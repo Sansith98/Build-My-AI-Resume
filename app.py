@@ -3135,22 +3135,23 @@ def export_headless(eid):
 
       /* 🚀 SHARPNESS & LINUX KERNING OVERRIDES */
       * {
-          -webkit-font-smoothing: subpixel-antialiased !important;
-          -moz-osx-font-smoothing: auto !important;
-          text-rendering: geometricPrecision !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
           font-kerning: normal !important;
+          font-family: 'Inter', sans-serif !important;
+          /* Tightly squeezes Linux text so it doesn't wrap or overlap */
+          letter-spacing: -0.015em !important;
+          word-spacing: -0.01em !important;
       }
+
       svg {
           overflow: hidden !important;
           max-height: 1123px !important;
           shape-rendering: geometricPrecision !important;
           text-rendering: geometricPrecision !important;
       }
-      img {
-          image-rendering: high-quality !important;
-          image-rendering: -webkit-optimize-contrast !important;
-      }
-    </style>   """    
+    </style>   """   
     
     # Prevent nested documents
     if "<html" in html_content.lower():
@@ -3224,11 +3225,7 @@ def export_hq_pdf(eid):
             # DEBUGGER: set headless=False above and uncomment to visually inspect
             #page.pause()
             
-            # 🚀 INJECT LINUX SPACING FIX RIGHT BEFORE PRINTING
-            page.add_style_tag(content="""
-                .a4 * { letter-spacing: -0.015em !important; font-family: 'Inter', sans-serif !important; }
-            """)
-            
+                
             # 📸 SECRET DEBUGGERS (Saves Screenshot AND Live HTML): 
             page.screenshot(path="/tmp/pw_debug.png", full_page=True)
             with open("/tmp/pw_debug.html", "w", encoding="utf-8") as f:
