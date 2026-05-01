@@ -3133,20 +3133,16 @@ def export_headless(eid):
           overflow: hidden !important;
       }
 
-      /* 🚀 SHARPNESS FIXES & LINUX OVERRIDES (Applies instantly to ALL pages) */
+      /* 🚀 SHARPNESS & LINUX KERNING OVERRIDES */
       * {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
           text-rendering: optimizeLegibility !important;
           font-kerning: normal !important;
           font-family: 'Inter', sans-serif !important;
+          /* Tightly squeezes Linux text so it doesn't wrap or overlap, WITHOUT changing the actual font size */
           letter-spacing: -0.015em !important;
-          word-spacing: -0.015em !important;
-      }
-      
-      /* 🚀 SIZE & OVERLAP FIX: Shrinks text slightly to match local Mac/Windows widths */
-      svg text, svg tspan {
-          font-size: 97.5% !important;
+          word-spacing: -0.01em !important;
       }
 
       svg {

@@ -305,23 +305,23 @@
 
         // Inline layout properties, but REMOVE rigid width/height and fontSize
         // This stops the text boxes from crushing the text and forcing it to wrap!
+        // Inline EVERY layout+visual property so the clone matches the preview EXACTLY
         const INLINE_PROPS = [
           'position','display','top','left','right','bottom',
-          'minWidth','minHeight','maxWidth','maxHeight',
+          'width','height','minWidth','minHeight','maxWidth','maxHeight',
           'margin','marginTop','marginRight','marginBottom','marginLeft',
           'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
           'boxSizing','overflow','overflowX','overflowY',
           'flexDirection','flexWrap','alignItems','justifyContent',
           'flex','flexGrow','flexShrink','flexBasis','gap',
           'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
-          'fontFamily','fontWeight','fontStyle',
+          'fontSize','fontFamily','fontWeight','fontStyle',
           'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
           'color','backgroundColor','background',
           'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
           'opacity','zIndex','transform','transformOrigin',
           'fill','stroke','strokeWidth',
-        ];
-        for (let i = 0; i < liveEls.length; i++) {
+        ];        for (let i = 0; i < liveEls.length; i++) {
           const live = liveEls[i];
           const cloneEl = cloneEls[i];
           if (!cloneEl) continue;
