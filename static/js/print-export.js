@@ -378,13 +378,19 @@
         // Remove editor-only elements
         clone.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(el => el.remove());
 
-        // Lock the page to exact dimensions
-        clone.style.cssText = `
-          position: relative !important; width: 794px !important; height: 1123px !important;
-          overflow: hidden !important; margin: 0 !important; padding: 0 !important;
-          box-shadow: none !important; outline: none !important; border: none !important;
-          transform: none !important; page-break-after: always !important; break-after: page !important;
-        `;
+        // Lock the page to exact dimensions — use setProperty to avoid wiping inlined styles
+        clone.style.setProperty('position', 'relative', 'important');
+        clone.style.setProperty('width', '794px', 'important');
+        clone.style.setProperty('height', '1123px', 'important');
+        clone.style.setProperty('overflow', 'hidden', 'important');
+        clone.style.setProperty('margin', '0', 'important');
+        clone.style.setProperty('padding', '0', 'important');
+        clone.style.setProperty('box-shadow', 'none', 'important');
+        clone.style.setProperty('outline', 'none', 'important');
+        clone.style.setProperty('border', 'none', 'important');
+        clone.style.setProperty('transform', 'none', 'important');
+        clone.style.setProperty('page-break-after', 'always', 'important');
+        clone.style.setProperty('break-after', 'page', 'important');
 
         return clone.outerHTML;
       }).join("\n");

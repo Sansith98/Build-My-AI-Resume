@@ -3135,16 +3135,11 @@ def export_headless(eid):
 
       /* 🚀 SHARPNESS & LINUX KERNING OVERRIDES */
       * {
-          -webkit-font-smoothing: antialiased !important;
-          -moz-osx-font-smoothing: grayscale !important;
-          text-rendering: optimizeLegibility !important;
+          -webkit-font-smoothing: subpixel-antialiased !important;
+          -moz-osx-font-smoothing: auto !important;
+          text-rendering: geometricPrecision !important;
           font-kerning: normal !important;
-          font-family: 'Inter', sans-serif !important;
-          /* Tightly squeezes Linux text so it doesn't wrap or overlap, WITHOUT changing the actual font size */
-          letter-spacing: -0.015em !important;
-          word-spacing: -0.01em !important;
       }
-
       svg {
           overflow: hidden !important;
           max-height: 1123px !important;
@@ -3193,8 +3188,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',
-                ]
+                    '--font-render-hinting=full',                ]
             )
 
             context = browser.new_context(
@@ -3233,7 +3227,10 @@ def export_hq_pdf(eid):
             # 📸 SECRETE DEBUG SCREENSHOT: 
             page.screenshot(path="/tmp/pw_debug.png", full_page=True)
 
-            page.pdf(                path=pdf_path,
+            page.pdf(
+                path=pdf_path,
+                width="210mm",
+                height="297mm",
                 print_background=True,
                 margin={
                     "top": "0px",
@@ -3241,7 +3238,7 @@ def export_hq_pdf(eid):
                     "left": "0px",
                     "right": "0px"
                 },
-                prefer_css_page_size=True,
+                prefer_css_page_size=False,
                 scale=1.0
             )
             browser.close()
