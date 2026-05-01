@@ -230,19 +230,30 @@
             text.includes("--wrap-top-pad") ||
             text.includes("#workspace") ||
             text.includes("#toolbar") ||
-            text.includes("#pages") ||
             text.includes("100vh") ||
             text.includes("applyZoom") ||
-            text.includes("overflow: hidden") ||
-            text.includes("overflow:hidden") ||
             text.includes("spin {") ||
             text.includes("export-modal") ||
-            text.includes("mainExportBtn")
+            text.includes("mainExportBtn") ||
+            text.includes("zoomCtl") ||
+            text.includes("bulletproof-print-container")
           );
           return !isStudioStyle;
         })
         .map(s => s.outerHTML)
         .join("\n");
+
+      // Carry ::before / ::after rules (skill bars use ::before for fill width)
+      // getComputedStyle cannot read pseudo-elements so we extract them from stylesheets
+      const pseudoCSS = Array.from(document.styleSheets).reduce((acc, sheet) => {
+        try {
+          return acc + Array.from(sheet.cssRules)
+            .filter(r => r.selectorText && (r.selectorText.includes('::before') || r.selectorText.includes('::after')))
+            .map(r => r.cssText)
+            .join("\n");
+        } catch(e) { return acc; }
+      }, "");
+      const pseudoStyleTag = pseudoCSS ? `<style>${pseudoCSS}</style>` : "";
 
       // 4. Collect ALL <link rel="stylesheet"> tags AND embed the font files as Base64
       const linkEls = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
@@ -349,6 +360,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   ${linkTags}
   ${styleTags}
+  ${pseudoStyleTag}
   <style>
     /* HARD RESET — cancels any studio layout CSS that leaked through styleTags */
     html, body {
