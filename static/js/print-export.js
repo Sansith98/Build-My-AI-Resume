@@ -220,14 +220,31 @@
         return;
       }
 
-      // 3. Collect ALL <style> tags from the page
-      //    (This includes your template CSS, studio CSS, everything)
+      // 3. Collect ALL <style> tags from the page (FILTERED)
       const styleTags = Array.from(document.querySelectorAll("style"))
+        .filter(s => {
+          const text = s.textContent || "";
+          // Skip studio UI styles — only keep template/resume content styles
+          const isStudioStyle = (
+            text.includes("--toolbar-h") ||
+            text.includes("--wrap-top-pad") ||
+            text.includes("#workspace") ||
+            text.includes("#toolbar") ||
+            text.includes("#pages") ||
+            text.includes("100vh") ||
+            text.includes("applyZoom") ||
+            text.includes("overflow: hidden") ||
+            text.includes("overflow:hidden") ||
+            text.includes("spin {") ||
+            text.includes("export-modal") ||
+            text.includes("mainExportBtn")
+          );
+          return !isStudioStyle;
+        })
         .map(s => s.outerHTML)
         .join("\n");
 
-      // 4. Collect ALL <link rel="stylesheet"> tags AND inline the font CSS
-      //    so Playwright has one less network hop to make for fonts
+      // 4. Collect ALL <link rel="stylesheet"> tags AND embed the font files as Base64
       const linkEls = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
       
       const inlinedFontStyles = await Promise.all(
@@ -240,11 +257,22 @@
                 if (!list.includes('800')) list.push('800');
                 return 'wght@' + list.sort((a,b) => a-b).join(';');
               });
-              link.href = href;
             }
-            // DO NOT intercept or inline the fonts. 
-            // Playwright's Linux engine will natively download the perfect Linux-optimized font.
-            return link.outerHTML; 
+            
+            const resp = await fetch(href);
+            let css = await resp.text();
+            
+            // Embed every woff2 as base64 — Playwright needs zero network calls for fonts
+            const woff2Urls = [...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m => m[1]);
+            for (const woff2Url of woff2Urls) {
+              try {
+                const fontResp = await fetch(woff2Url);
+                const fontBuffer = await fontResp.arrayBuffer();
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(fontBuffer)));
+                css = css.replace(`url(${woff2Url})`, `url(data:font/woff2;base64,${base64})`);
+              } catch (e) {}
+            }
+            return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
           } catch (err) {
             return link.outerHTML;
           }
@@ -361,6 +389,22 @@
   ${linkTags}
   ${styleTags}
   <style>
+    /* HARD RESET — cancels any studio layout CSS that leaked through styleTags */
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      width: 794px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    #pages, #workspace, .wrap {
+      transform: none !important;
+      zoom: 1 !important;
+      height: auto !important;
+      overflow: visible !important;
+      position: static !important;
+    }
+    
     /* Playwright render overrides */
     @page { size: 794px 1123px; margin: 0 !important; }
     html, body {
