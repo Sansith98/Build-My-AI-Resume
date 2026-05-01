@@ -303,25 +303,24 @@
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
         const cloneEls = Array.from(clone.querySelectorAll('*'));
 
-        // Inline layout properties, but REMOVE rigid dimensions and typography
-        // This allows the Linux browser to use the CSS naturally without sub-pixel wrapping issues
+        // Inline every layout+visual property so the clone needs zero external CSS
         const INLINE_PROPS = [
           'position','display','top','left','right','bottom',
-          /* Removed rigid dimensions to prevent wrapping bugs */
+          'width','height','minWidth','minHeight','maxWidth','maxHeight',
           'margin','marginTop','marginRight','marginBottom','marginLeft',
           'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
           'boxSizing','overflow','overflowX','overflowY',
           'flexDirection','flexWrap','alignItems','justifyContent',
           'flex','flexGrow','flexShrink','flexBasis','gap',
           'gridTemplateColumns','gridTemplateRows','gridColumn','gridRow',
-          /* Removed typography to prevent zoom-scaling bugs */
-          'fontWeight','fontStyle',
-          'textAlign','textTransform','whiteSpace',
+          'fontSize','fontFamily','fontWeight','fontStyle',
+          'lineHeight','letterSpacing','textAlign','textTransform','whiteSpace',
           'color','backgroundColor','background',
           'borderRadius','border','borderTop','borderRight','borderBottom','borderLeft',
           'opacity','zIndex','transform','transformOrigin',
           'fill','stroke','strokeWidth',
         ];
+
         for (let i = 0; i < liveEls.length; i++) {
           const live = liveEls[i];
           const cloneEl = cloneEls[i];
@@ -342,6 +341,39 @@
           if (cloneEl.style.outline && cloneEl.style.outline.includes('rgb(59')) cloneEl.style.outline = 'none';
           if (cloneEl.style.boxShadow && cloneEl.style.boxShadow.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
         }
+
+        // Inline CSS custom properties (variables) — getComputedStyle misses these
+        // This fixes --dot-size, --bar-height, --bar-width and any other CSS vars
+        const allLiveEls = Array.from(pageEl.querySelectorAll('*'));
+        const allCloneEls = Array.from(clone.querySelectorAll('*'));
+        const rootStyles = getComputedStyle(document.documentElement);
+        
+        allLiveEls.forEach((liveEl, i) => {
+          const cloneEl = allCloneEls[i];
+          if (!cloneEl) return;
+          const liveStyle = liveEl.getAttribute('style') || '';
+          // Extract any --variable references from inline styles and resolve them
+          const varMatches = [...liveStyle.matchAll(/var\((--[^)]+)\)/g)];
+          varMatches.forEach(match => {
+            const varName = match[1].trim();
+            // Try element first, then root
+            const val = getComputedStyle(liveEl).getPropertyValue(varName).trim() 
+                     || rootStyles.getPropertyValue(varName).trim();
+            if (val) {
+              cloneEl.style.setProperty(varName, val);
+            }
+          });
+          // Also copy any custom properties set directly on the element
+          if (liveEl.style && liveEl.style.length) {
+            for (let p = 0; p < liveEl.style.length; p++) {
+              const prop = liveEl.style[p];
+              if (prop.startsWith('--')) {
+                const val = liveEl.style.getPropertyValue(prop);
+                if (val) cloneEl.style.setProperty(prop, val);
+              }
+            }
+          }
+        });
 
         // Remove editor-only elements
         clone.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(el => el.remove());

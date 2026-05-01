@@ -3204,7 +3204,14 @@ def export_hq_pdf(eid):
             )
             page = context.new_page()
 
-            page.goto(target_url, wait_until="networkidle")
+            page.goto(target_url, wait_until="networkidle", timeout=30000)
+            page.wait_for_load_state("domcontentloaded")
+
+            # Inject a micro letter-spacing correction to match local Chrome font metrics
+            page.add_style_tag(content="""
+                .a4 * { letter-spacing: -0.01em !important; }
+                .a4 p, .a4 span, .a4 div { word-spacing: -0.01em !important; }
+            """)
 
             # Wait for ALL fonts to fully load including Google Fonts woff2 downloads
             page.evaluate("""async () => {
