@@ -3133,25 +3133,19 @@ def export_headless(eid):
           overflow: hidden !important;
       }
 
-      /* 🚀 SHARPNESS & LINUX KERNING OVERRIDES */
-      * {
+      /* 🚀 FIX 3: THE KERNING SCALPEL */
+      /* Targets your specific HTML text divs and squeezes the letters slightly so Linux 
+         fits them into the boxes without overriding your carefully calculated font sizes! */
+      .a4 * {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
           text-rendering: optimizeLegibility !important;
           font-kerning: normal !important;
           font-family: 'Inter', sans-serif !important;
-          /* Tightly squeezes Linux text so it doesn't wrap or overlap */
           letter-spacing: -0.015em !important;
-          word-spacing: -0.01em !important;
       }
-
-      svg {
-          overflow: hidden !important;
-          max-height: 1123px !important;
-          shape-rendering: geometricPrecision !important;
-          text-rendering: geometricPrecision !important;
-      }
-    </style>   """   
+    </style>
+    """  
     
     # Prevent nested documents
     if "<html" in html_content.lower():
