@@ -3259,7 +3259,7 @@ def export_hq_pdf(eid):
 
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
-                device_scale_factor=2,
+                device_scale_factor=1,
                 ignore_https_errors=True,
                 extra_http_headers={
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
