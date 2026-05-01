@@ -3299,7 +3299,8 @@ def export_hq_pdf(eid):
                 },
                 prefer_css_page_size=True,
                 scale=1.0
-            )            browser.close()
+            )
+            browser.close()
 
         return send_file(
             pdf_path, 
