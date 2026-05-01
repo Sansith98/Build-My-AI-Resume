@@ -3158,11 +3158,45 @@ def serve_font(filename):
 
 @app.get("/export/hq-pdf/<eid>")
 def export_hq_pdf(eid):
-    target_url = f"{request.host_url}export/headless/{eid}"
-    
     import tempfile
     import os
+    import re
     from playwright.sync_api import sync_playwright
+
+    # 1. Grab the HTML locally (Bypasses the Server Deadlock entirely!)
+    item = _get_export_payload(eid)
+    raw_html = item.get("html", "")
+    html_content = "\n".join(raw_html) if isinstance(raw_html, list) else str(raw_html)
+    
+    css_injection = """
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      @page { size: 794px 1123px; margin: 0; }
+      html, body { 
+          margin: 0 !important; padding: 0 !important; background: #fff !important; 
+          height: auto !important; overflow: visible !important; 
+          -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
+          font-family: 'Inter', sans-serif !important;
+      }
+      body > div, .app-root, #root {
+          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
+          background: transparent !important; padding: 0 !important; margin: 0 !important;
+      }
+      .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
+          page-break-after: always !important; break-after: page !important;
+          display: block !important; position: relative !important; transform: none !important; zoom: 1 !important;
+          width: 794px !important; height: 1123px !important; margin: 0 !important; padding: 0 !important;
+          box-shadow: none !important; border: none !important; overflow: hidden !important;
+      }
+      .text, .normal-line, .bullet-line { min-width: 102% !important; overflow: visible !important; }
+      * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
+    </style>
+    """  
+    if "<html" in html_content.lower():
+        final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
+        if css_injection not in final_html: final_html = css_injection + html_content
+    else:
+        final_html = f"<!doctype html><html><head><meta charset='utf-8'/>{css_injection}</head><body>{html_content}</body></html>"
 
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf_path = temp_pdf.name
@@ -3170,32 +3204,26 @@ def export_hq_pdf(eid):
 
     try:
         with sync_playwright() as p:
-            # 1. Force higher rendering quality at the browser level
-            # Change headless=False if you want to use the debugger
             browser = p.chromium.launch(
                 headless=True,
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',                ]
+                    '--font-render-hinting=none',
+                ]
             )
 
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
                 device_scale_factor=1,
                 ignore_https_errors=True,
-                extra_http_headers={
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "en-US,en;q=0.9",
-                }
             )
             page = context.new_page()
 
-            page.goto(target_url, wait_until="networkidle", timeout=30000)
-            page.wait_for_load_state("domcontentloaded")
+            # 2. Inject HTML directly into Playwright
+            page.set_content(final_html, wait_until="networkidle", timeout=30000)
 
-
-            # Wait for ALL fonts to fully load including Google Fonts woff2 downloads
+            # Wait for ALL fonts to fully load
             page.evaluate("""async () => {
                 await document.fonts.ready;
                 document.body.getBoundingClientRect();
@@ -3204,25 +3232,15 @@ def export_hq_pdf(eid):
                 await Promise.all(allFonts.map(f => f.loaded.catch(() => null)));
             }""")
 
-            # Increased wait — gives Google Fonts woff2 files time to fully decode
             page.wait_for_timeout(2500)
-
-            # 🚀 THE FIX: Force Chromium to use punchy RGB "Screen" colors instead of muted "Print" colors
             page.emulate_media(media="screen")
 
-            # DEBUGGER: set headless=False above and uncomment to visually inspect
-            #page.pause()
-
-            page.pdf(                path=pdf_path,
+            page.pdf(
+                path=pdf_path,
                 width="210mm",
                 height="297mm",
                 print_background=True,
-                margin={
-                    "top": "0px",
-                    "bottom": "0px",
-                    "left": "0px",
-                    "right": "0px"
-                },
+                margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
                 prefer_css_page_size=False,
                 scale=1.0
             )
