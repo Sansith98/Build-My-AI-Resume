@@ -233,7 +233,6 @@
       const inlinedFontStyles = await Promise.all(
         linkEls.map(async (link) => {
           try {
-            // Fix Google Fonts URLs to always include weight 800
             let href = link.href;
             if (href.includes('fonts.googleapis.com') && href.includes('Inter') && !href.includes('800')) {
               href = href.replace(/wght@([^&"]+)/, (match, weights) => {
@@ -241,20 +240,13 @@
                 if (!list.includes('800')) list.push('800');
                 return 'wght@' + list.sort((a,b) => a-b).join(';');
               });
+              link.href = href;
             }
-            const resp = await fetch(href);
-            let css = await resp.text();
-            // Rewrite gstatic URLs to local static/fonts/ so Playwright loads them instantly
-            css = css.replace(
-              /url\(https:\/\/fonts\.gstatic\.com\/[^)]+\)/g,
-              (match) => {
-                const filename = match.split('/').pop().replace(')', '').replace(/['"]/g, '');
-                return `url(/static/fonts/${filename})`;
-              }
-            );
-            return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
+            // DO NOT intercept or inline the fonts. 
+            // Playwright's Linux engine will natively download the perfect Linux-optimized font.
+            return link.outerHTML; 
           } catch (err) {
-            return link.outerHTML; // fallback to standard link tag if fetch fails
+            return link.outerHTML;
           }
         })
       );
