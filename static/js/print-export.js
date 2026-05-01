@@ -243,7 +243,15 @@
               });
             }
             const resp = await fetch(href);
-            const css = await resp.text();
+            let css = await resp.text();
+            // Rewrite gstatic URLs to local static/fonts/ so Playwright loads them instantly
+            css = css.replace(
+              /url\(https:\/\/fonts\.gstatic\.com\/[^)]+\)/g,
+              (match) => {
+                const filename = match.split('/').pop().replace(')', '').replace(/['"]/g, '');
+                return `url(/static/fonts/${filename})`;
+              }
+            );
             return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
           } catch (err) {
             return link.outerHTML; // fallback to standard link tag if fetch fails

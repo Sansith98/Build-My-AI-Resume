@@ -3251,16 +3251,15 @@ def export_hq_pdf(eid):
             browser = p.chromium.launch(
                 headless=True,
                 args=[
-                    '--force-device-scale-factor=2',
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--disable-lcd-text',
+                    '--font-render-hinting=full',
                 ]
             )
 
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
-                device_scale_factor=3,
+                device_scale_factor=2,
                 ignore_https_errors=True,
                 extra_http_headers={
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -3332,8 +3331,32 @@ def serve_robots():
 def serve_sitemap():
     return send_from_directory(BASE_DIR, 'sitemap.xml')                
 # =============================================================================
-# Run
+# Run & Font Downloader
 # =============================================================================
+import sys
+if '--download-fonts' in sys.argv:
+    import requests, re
+    from pathlib import Path
+    FONT_URLS = [
+        "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+    ]
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0"}
+    
+    # Safely define font_dir using Path
+    font_dir = Path(__file__).resolve().parent / "static" / "fonts"
+    font_dir.mkdir(parents=True, exist_ok=True)
+    
+    for font_url in FONT_URLS:
+        css = requests.get(font_url, headers=headers).text
+        for url in re.findall(r'url\((https://fonts\.gstatic\.com/[^)]+)\)', css):
+            filename = url.split('/')[-1]
+            dest = font_dir / filename
+            if not dest.exists():
+                print(f"Downloading {filename}...")
+                dest.write_bytes(requests.get(url).content)
+    print("All fonts downloaded to static/fonts/")
+    sys.exit(0)
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=False)
