@@ -3212,15 +3212,8 @@ def export_hq_pdf(eid):
 
             # DEBUGGER: set headless=False above and uncomment to visually inspect
             #page.pause()
-            
-                
-            # 📸 SECRET DEBUGGERS (Saves Screenshot AND Live HTML): 
-            page.screenshot(path="/tmp/pw_debug.png", full_page=True)
-            with open("/tmp/pw_debug.html", "w", encoding="utf-8") as f:
-                f.write(page.content())
 
-            page.pdf(
-                path=pdf_path,
+            page.pdf(                path=pdf_path,
                 width="210mm",
                 height="297mm",
                 print_background=True,
@@ -3265,23 +3258,6 @@ def serve_sitemap():
 # =============================================================================
 # Run & Font Downloader
 # =============================================================================
-
-@app.route('/debug/screenshot')
-def debug_screenshot():
-    import os
-    from flask import send_file
-    if os.path.exists('/tmp/pw_debug.png'):
-        return send_file('/tmp/pw_debug.png', mimetype='image/png')
-    return "No screenshot yet", 404
-
-# 🚀 NEW ROUTE TO INSPECT THE RAW PLAYWRIGHT HTML
-@app.route('/debug/html')
-def debug_html():
-    import os
-    from flask import send_file
-    if os.path.exists('/tmp/pw_debug.html'):
-        return send_file('/tmp/pw_debug.html', mimetype='text/html')
-    return "No HTML yet", 404
 
 
 
