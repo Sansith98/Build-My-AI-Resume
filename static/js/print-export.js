@@ -310,6 +310,15 @@
           const cloneEl = cloneEls[i];
           if (!cloneEl) continue;
 
+          // 🚀 THE TYPOGRAPHY LOCK: Force Playwright to use your exact screen metrics
+          const computed = window.getComputedStyle(live);
+          const textProps = ['fontSize', 'lineHeight', 'fontWeight', 'fontFamily', 'letterSpacing', 'color', 'textAlign'];
+          textProps.forEach(prop => {
+            if (computed[prop] && computed[prop] !== 'normal') {
+              cloneEl.style[prop] = computed[prop];
+            }
+          });
+
           // 🚀 ONLY COPY CSS VARIABLES (Required for Skill Dots)
           const liveStyle = live.getAttribute('style') || '';
           const varMatches = [...liveStyle.matchAll(/var\((--[^)]+)\)/g)];

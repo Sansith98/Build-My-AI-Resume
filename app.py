@@ -3126,17 +3126,16 @@ def export_headless(eid):
           box-shadow: none !important; border: none !important; overflow: hidden !important;
       }
 
-      /* 🚀 FIX 3: TEXT WRAPPING SAFETY NET */
-      /* This allows inner text divs to stretch slightly if Linux needs 1-2 extra pixels, preventing line breaks */
+      /* 🚀 PRESERVE EXACT MEASUREMENTS */
       .text, .normal-line, .bullet-line {
-          min-width: 102% !important; 
+          white-space: pre-wrap !important;
           overflow: visible !important;
       }
 
       * {
           -webkit-font-smoothing: antialiased !important;
           -moz-osx-font-smoothing: grayscale !important;
-          text-rendering: optimizeLegibility !important;
+          text-rendering: geometricPrecision !important;
       }
     </style>
     """  
