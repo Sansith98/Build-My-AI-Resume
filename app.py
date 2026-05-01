@@ -3188,7 +3188,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=full',                ]
+                    '--font-render-hinting=none',                ]
             )
 
             context = browser.new_context(
@@ -3224,8 +3224,15 @@ def export_hq_pdf(eid):
             # DEBUGGER: set headless=False above and uncomment to visually inspect
             #page.pause()
             
-            # 📸 SECRETE DEBUG SCREENSHOT: 
+            # 🚀 INJECT LINUX SPACING FIX RIGHT BEFORE PRINTING
+            page.add_style_tag(content="""
+                .a4 * { letter-spacing: -0.015em !important; font-family: 'Inter', sans-serif !important; }
+            """)
+            
+            # 📸 SECRET DEBUGGERS (Saves Screenshot AND Live HTML): 
             page.screenshot(path="/tmp/pw_debug.png", full_page=True)
+            with open("/tmp/pw_debug.html", "w", encoding="utf-8") as f:
+                f.write(page.content())
 
             page.pdf(
                 path=pdf_path,
@@ -3281,6 +3288,15 @@ def debug_screenshot():
     if os.path.exists('/tmp/pw_debug.png'):
         return send_file('/tmp/pw_debug.png', mimetype='image/png')
     return "No screenshot yet", 404
+
+# 🚀 NEW ROUTE TO INSPECT THE RAW PLAYWRIGHT HTML
+@app.route('/debug/html')
+def debug_html():
+    import os
+    from flask import send_file
+    if os.path.exists('/tmp/pw_debug.html'):
+        return send_file('/tmp/pw_debug.html', mimetype='text/html')
+    return "No HTML yet", 404
 
 
 
