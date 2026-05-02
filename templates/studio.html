@@ -11155,6 +11155,81 @@ delPageBtn.addEventListener('click', ()=>{
       if (!pages.length) return false;
 
       const data = payload.data || {};
+
+      // 🚀 DYNAMIC FONT & WEIGHT SCANNER + DEBUGGER
+    const usedFonts = {};
+    
+    pages.forEach(page => {
+        (page.elements || []).forEach(el => {
+            if (el.style && el.style.fontFamily) {
+                let fontName = el.style.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+                const sysFonts = ['Inter', 'Arial', 'Courier New', 'Times New Roman', 'Verdana', 'sans-serif', 'serif', 'monospace', 'system-ui'];
+                
+                if (fontName && !sysFonts.includes(fontName)) {
+                    if (!usedFonts[fontName]) usedFonts[fontName] = new Set();
+                    
+                    // Extract the exact weight from layout.json
+                    let weight = String(el.style.fontWeight || '400');
+                    if (weight === 'normal') weight = '400';
+                    if (weight === 'bold') weight = '700';
+                    
+                    usedFonts[fontName].add(weight);
+                }
+            }
+        });
+    });
+
+    // 🚀 THE DEBUGGER: Visual Table in the Console
+    const fontDebugData = [];
+
+    Object.keys(usedFonts).forEach(fontName => {
+        // Safety net: Always include 400 and 700. 
+        // Why? If the user clicks the "Bold" or "Unbold" button while editing, we don't want the text to look blurry!
+        usedFonts[fontName].add('400');
+        usedFonts[fontName].add('700');
+
+        let formattedName = fontName.replace(/ /g, '+');
+        
+        // Sort weights mathematically (e.g., 300;400;700) so the Google API accepts them cleanly
+        let weights = Array.from(usedFonts[fontName]).sort((a, b) => parseInt(a) - parseInt(b)).join(';');
+        
+        // Add to our debugger table
+        fontDebugData.push({ "Font Family": fontName, "Weights Requested": weights });
+
+        let fontUrl = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@${weights}&display=swap`;
+        
+        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+            let link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = fontUrl;
+            document.head.appendChild(link);
+        }
+    });
+
+    // Print the Debugger to the Console
+    if (fontDebugData.length > 0) {
+        console.log("%c🟢 [FONT SCANNER DEBUGGER] Custom Fonts dynamically loaded:", "color: #10b981; font-weight: bold; font-size: 13px;");
+        console.table(fontDebugData);
+    } else {
+        console.log("%c🟢 [FONT SCANNER DEBUGGER] No custom fonts required. Using system defaults.", "color: #3b82f6; font-weight: bold;");
+    }
+
+      usedFonts.forEach(fontName => {
+          let formattedName = fontName.replace(/ /g, '+');
+          let fontUrl = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@300;400;500;600;700;800&display=swap`;
+          if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+              let link = document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = fontUrl;
+              document.head.appendChild(link);
+              console.log("Dynamically loaded template font:", fontName);
+          }
+      });
+
+
+
+
+      
       window.__currentResumeData = data; // Save data for later when adding pages
       window.hiddenPageTemplate = null;
 
