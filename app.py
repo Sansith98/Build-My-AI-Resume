@@ -3120,7 +3120,7 @@ def export_hq_pdf(eid):
         text-rendering: geometricPrecision !important;
         
         /* Forces the micro-stroke onto EVERY letter of ANY font */
-        -webkit-text-stroke: 0.025px currentColor !important; 
+        -webkit-text-stroke: 0.001px currentColor !important; 
       }
       
       svg text, svg tspan { 
