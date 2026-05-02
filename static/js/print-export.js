@@ -412,10 +412,50 @@
       clone.style.pageBreakInside = "avoid";
     }
 
-    // Remove active selection highlights
+    // 🚀 NEW: Mathematical Color Scanner for "Near-White"
+    function isNearWhite(colorStr) {
+      if (!colorStr) return false;
+      const c = colorStr.toLowerCase().replace(/\s/g, '');
+      if (c === 'white') return true;
+      if (c === 'transparent' || c === 'none') return false;
+      
+      let r, g, b;
+      if (c.startsWith('#')) {
+        let hex = c.substring(1);
+        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+        if (hex.length >= 6) {
+          r = parseInt(hex.substring(0, 2), 16);
+          g = parseInt(hex.substring(2, 4), 16);
+          b = parseInt(hex.substring(4, 6), 16);
+        }
+      } else if (c.startsWith('rgb')) {
+        const match = c.match(/rgba?\((\d+),(\d+),(\d+)/);
+        if (match) {
+          r = parseInt(match[1]);
+          g = parseInt(match[2]);
+          b = parseInt(match[3]);
+        }
+      }
+      
+      // If Red, Green, and Blue are all above 225, it's in the white range
+      if (r !== undefined && g !== undefined && b !== undefined) {
+        return r > 225 && g > 225 && b > 225;
+      }
+      return false;
+    }
+
+    // Remove active selection highlights and SAFELY TAG NEAR-WHITE TEXT
     clone.querySelectorAll('*').forEach(el => {
-      el.classList.remove("active");
+      el.classList.remove("active", "multi", "editing");
       if (el.style.outline) el.style.outline = "none";
+
+      const tColor = el.style.color || "";
+      const tFill = el.getAttribute("fill") || "";
+      
+      // If it passes the math check, tag it
+      if (isNearWhite(tColor) || isNearWhite(tFill)) {
+          el.classList.add("print-white-text");
+      }
     });
 
     // Fix anti-aliasing white lines on background shapes
@@ -451,25 +491,41 @@
     const hideStyle = document.createElement("style");
     let styleContent = `
       body > *:not(#bulletproof-print-container) { display: none !important; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      
+      * { 
+        -webkit-print-color-adjust: exact !important; 
+        print-color-adjust: exact !important; 
+      }
+
+      /* 🚀 1. NATIVE BASE: Pure, unmodified vector text for normal text */
+      .a4 * {
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+      }
+
+      /* 🚀 2. ILLUMINATED NEAR-WHITE TEXT */
+      .print-white-text {
+          /* A microscopic stroke to maintain solid edges during printing */
+          -webkit-text-stroke: 0.02px currentColor !important;
+          
+          /* A pure white/light backlight to illuminate it, completely replacing the muddy black shadow */
+          text-shadow: 0px 0px 3px rgba(255, 255, 255, 0.8) !important;
+      }
+
+      @page { 
+        size: A4 portrait; 
+        margin: 0 !important; 
+      }
+      
+      html, body { 
+        background: #fff !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+      }
     `;
-
-    if (mode === 'hq') {
-      styleContent += `
-        @page { size: 794px 1123px; margin: 0 !important; }
-        html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; width: 794px !important; }
-        * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
-        img { image-rendering: high-quality !important; image-rendering: -webkit-optimize-contrast !important; }
-        .a4, .a4 * { zoom: 1 !important; filter: none !important; }
-      `;
-    } else {
-      styleContent += `
-        @page { size: A4 portrait; margin: 0 !important; }
-        html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
-        .a4 { overflow: hidden !important; max-height: 1123px !important; }
-      `;
-    }
-
     hideStyle.innerHTML = styleContent;
     document.head.appendChild(hideStyle);
 
