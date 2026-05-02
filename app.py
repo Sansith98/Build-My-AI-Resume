@@ -3099,7 +3099,7 @@ def export_headless(eid):
     css_injection = """
     <style>
       /* 🚀 FORCE FONT DOWNLOAD TO PREVENT LINUX FALLBACKS */
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      
 
       /* 🚀 PDF GLOBAL RESET */
       @page { size: 794px 1123px; margin: 0; }
@@ -3207,7 +3207,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',
+                    '--font-render-hinting=full',
                 ]
             )
 
