@@ -3084,55 +3084,64 @@ def export_print(eid):
 """
     return make_response(page, 200)
 
+@app.get("/export/hq-pdf/<eid>")
+def export_hq_pdf(eid):
+    import tempfile, re, os
+    from playwright.sync_api import sync_playwright
 
-@app.get("/export/headless/<eid>")
-def export_headless(eid):
-    import re
+    # 1. Grab HTML locally (Bypass the Deadlock!)
     item = _get_export_payload(eid)
     slug = item["slug"]
     raw_html = item.get("html", "")
-    
-    # Stitch pages together if sent as a list
-    if isinstance(raw_html, list):
-        html_content = "\n".join(raw_html)
-    else:
-        html_content = str(raw_html)
-    @app.get("/export/hq-pdf/<eid>")
-def export_hq_pdf(eid):
-    import tempfile, re
-    from playwright.sync_api import sync_playwright
+    html_content = "\n".join(raw_html) if isinstance(raw_html, list) else str(raw_html)
 
-    item         = _get_export_payload(eid)
-    html_content = item.get("html", "")
-    if isinstance(html_content, list):
-        html_content = "\n".join(html_content)
-
-    # 🚀 ATS FONT FIX: Force standard network loading of fonts so the PDF preserves character maps!
-    css_injection = """<style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    # 2. Inject your EXACT custom CSS from your local settings
+    css_injection = """
+    <style>
+      /* 🚀 PDF GLOBAL RESET */
       @page { size: 794px 1123px; margin: 0; }
-      html, body {
-        margin: 0 !important; padding: 0 !important;
-        background: #fff !important; width: 794px !important;
-        height: auto !important; overflow: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
+      html, body { 
+          margin: 0 !important; padding: 0 !important; background: #fff !important; 
+          height: auto !important; overflow: visible !important; 
+          -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
       }
-      .a4 {
-        page-break-after: always !important; break-after: page !important;
-        width: 794px !important; height: 1123px !important;
-        overflow: hidden !important; transform: none !important;
-        box-shadow: none !important; border: none !important;
+      /* Compensate for Chromium PDF colour desaturation */
+      .shape-el, .background-shape, .rect-el, .rounded-rect-el, .ellipse-el, .design-el:not(.text-el) {
+          filter: saturate(1.14) contrast(1.05) !important;
+      }
+      .a4 > div[style*="background"], .a4 > div[style*="background-color"] {
+          filter: saturate(1.14) contrast(1.05) !important;
+      }
+      body > div, .app-root, #root {
+          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
+          background: transparent !important; padding: 0 !important; margin: 0 !important;
+      }
+      .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
+          page-break-after: always !important; break-after: page !important; display: block !important;
+          position: relative !important; transform: none !important; zoom: 1 !important;
+          width: 794px !important; height: 1123px !important; margin: 0 !important; padding: 0 !important;
+          box-shadow: none !important; border: none !important; overflow: hidden !important;
       }
       * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
+          -webkit-font-smoothing: antialiased !important;
+          -moz-osx-font-smoothing: grayscale !important;
+          text-rendering: optimizeLegibility !important;
+          font-kerning: normal !important;
       }
-    </style>"""
+      svg { overflow: hidden !important; max-height: 1123px !important; shape-rendering: geometricPrecision !important; text-rendering: geometricPrecision !important; }
+      text, tspan { text-rendering: geometricPrecision !important; font-kerning: normal !important; paint-order: stroke fill !important; stroke-linejoin: round !important; }
+      text[fill="#ffffff"], tspan[fill="#ffffff"] { stroke: #ffffff !important; stroke-width: 0.35px !important; stroke-opacity: 0.55 !important; }
+      text[fill="#f7f7f7"], tspan[fill="#f7f7f7"], text[fill="#d1d5db"], tspan[fill="#d1d5db"] { stroke: #f7f7f7 !important; stroke-width: 0.3px !important; stroke-opacity: 0.45 !important; }
+      text[fill="#050505"], tspan[fill="#050505"], text[fill="#0a0a0a"], tspan[fill="#0a0a0a"], text[fill="#111827"], tspan[fill="#111827"], text[fill="#374151"], tspan[fill="#374151"] { stroke: currentColor !important; stroke-width: 0.25px !important; stroke-opacity: 0.4 !important; }
+      img { image-rendering: high-quality !important; image-rendering: -webkit-optimize-contrast !important; filter: contrast(1.04) saturate(1.05) !important; }
+    </style>
+    """
 
-    final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
+    if "<html" in html_content.lower():
+        final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
+        if css_injection not in final_html: final_html = css_injection + html_content
+    else:
+        final_html = f"<!doctype html><html><head><meta charset='utf-8'/><title>{slug}</title>{css_injection}</head><body>{html_content}</body></html>"
 
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf_path = temp_pdf.name
@@ -3143,18 +3152,23 @@ def export_hq_pdf(eid):
             browser = p.chromium.launch(
                 headless=True,
                 args=[
+                    '--force-device-scale-factor=2', # 🚀 Kept your local settings
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',
+                    '--disable-lcd-text',
+                    '--font-render-hinting=none',    # 🚀 MUST HAVE FOR LINUX KERNING! Stops text stretching.
                     '--disable-web-security',
                 ]
             )
+
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
-                device_scale_factor=1,
+                device_scale_factor=3,               # 🚀 Kept your local settings
+                ignore_https_errors=True,
             )
             page = context.new_page()
 
+            # 🚀 INTERCEPTOR FOR DEADLOCKS (Loads assets from disk, not network)
             def intercept_route(route):
                 url = route.request.url
                 if "/static/" in url:
@@ -3165,40 +3179,49 @@ def export_hq_pdf(eid):
                     if os.path.exists(fp): return route.fulfill(path=fp)
                 if "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
-                
-                # 🚀 CRITICAL FIX: DO NOT ABORT GOOGLE FONTS. Let them download naturally!
                 route.continue_()
 
             page.route("**/*", intercept_route)
+
+            # 🚀 LOAD HTML DIRECTLY (Fixes the infinite spinning)
             page.set_content(final_html, wait_until="load", timeout=20000)
-            
-            # 🚀 WAIT FOR FONTS TO PARSE
-            page.evaluate("async () => { await document.fonts.ready; }")
-            page.wait_for_timeout(1500)
-            
+
+            # Wait for ALL fonts to fully load
+            page.evaluate("""async () => {
+                await document.fonts.ready;
+                document.body.getBoundingClientRect();
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                const allFonts = [...document.fonts];
+                await Promise.all(allFonts.map(f => f.loaded.catch(() => null)));
+            }""")
+
+            page.wait_for_timeout(2500)
             page.emulate_media(media="screen")
+
             page.pdf(
                 path=pdf_path,
-                width="794px",
-                height="1123px",
+                format="A4",
                 print_background=True,
                 margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
-                prefer_css_page_size=False,
+                prefer_css_page_size=True,
                 scale=1.0
             )
             browser.close()
 
         return send_file(
-            pdf_path,
-            as_attachment=True,
-            download_name=f"Resume_{eid}.pdf",
+            pdf_path, 
+            as_attachment=True, 
+            download_name=f"HQ_Resume_{eid}.pdf",
             mimetype="application/pdf"
         )
+        
     except Exception as e:
         return f"Error generating PDF: {str(e)}", 500
+        
     finally:
-        try: os.remove(pdf_path)
-        except: pass
+        if os.path.exists(pdf_path):
+            try: os.remove(pdf_path)
+            except: pass
 
     return "Invalid export mode", 400
 
