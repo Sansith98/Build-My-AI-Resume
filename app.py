@@ -3089,139 +3089,131 @@ def export_hq_pdf(eid):
     import tempfile, re, os
     from playwright.sync_api import sync_playwright
 
-    # 1. Grab HTML locally (Bypass the Deadlock!)
-    item = _get_export_payload(eid)
-    slug = item["slug"]
-    raw_html = item.get("html", "")
-    html_content = "\n".join(raw_html) if isinstance(raw_html, list) else str(raw_html)
+    item         = _get_export_payload(eid)
+    html_content = item.get("html", "")
+    if isinstance(html_content, list):
+        html_content = "\n".join(html_content)
 
-    # 2. Inject your EXACT custom CSS from your local settings
-    css_injection = """
-    <style>
-      /* 🚀 PDF GLOBAL RESET */
+    # 🚀 ATS FONT FIX: Force standard network loading of fonts so the PDF preserves character maps
+    css_injection = """<style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
-      html, body { 
-          margin: 0 !important; padding: 0 !important; background: #fff !important; 
-          height: auto !important; overflow: visible !important; 
-          -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
+      html, body {
+        margin: 0 !important; padding: 0 !important;
+        background: #fff !important; width: 794px !important;
+        height: auto !important; overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        font-family: 'Inter', sans-serif !important;
       }
-      /* Compensate for Chromium PDF colour desaturation */
-      .shape-el, .background-shape, .rect-el, .rounded-rect-el, .ellipse-el, .design-el:not(.text-el) {
-          filter: saturate(1.14) contrast(1.05) !important;
-      }
-      .a4 > div[style*="background"], .a4 > div[style*="background-color"] {
-          filter: saturate(1.14) contrast(1.05) !important;
-      }
-      body > div, .app-root, #root {
-          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
-          background: transparent !important; padding: 0 !important; margin: 0 !important;
-      }
-      .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
-          page-break-after: always !important; break-after: page !important; display: block !important;
-          position: relative !important; transform: none !important; zoom: 1 !important;
-          width: 794px !important; height: 1123px !important; margin: 0 !important; padding: 0 !important;
-          box-shadow: none !important; border: none !important; overflow: hidden !important;
+      .a4 {
+        page-break-after: always !important; break-after: page !important;
+        width: 794px !important; height: 1123px !important;
+        overflow: hidden !important; transform: none !important;
+        box-shadow: none !important; border: none !important;
       }
       * {
-          -webkit-font-smoothing: antialiased !important;
-          -moz-osx-font-smoothing: grayscale !important;
-          text-rendering: optimizeLegibility !important;
-          font-kerning: normal !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        font-family: 'Inter', sans-serif !important;
       }
-      svg { overflow: hidden !important; max-height: 1123px !important; shape-rendering: geometricPrecision !important; text-rendering: geometricPrecision !important; }
-      text, tspan { text-rendering: geometricPrecision !important; font-kerning: normal !important; paint-order: stroke fill !important; stroke-linejoin: round !important; }
-      text[fill="#ffffff"], tspan[fill="#ffffff"] { stroke: #ffffff !important; stroke-width: 0.35px !important; stroke-opacity: 0.55 !important; }
-      text[fill="#f7f7f7"], tspan[fill="#f7f7f7"], text[fill="#d1d5db"], tspan[fill="#d1d5db"] { stroke: #f7f7f7 !important; stroke-width: 0.3px !important; stroke-opacity: 0.45 !important; }
-      text[fill="#050505"], tspan[fill="#050505"], text[fill="#0a0a0a"], tspan[fill="#0a0a0a"], text[fill="#111827"], tspan[fill="#111827"], text[fill="#374151"], tspan[fill="#374151"] { stroke: currentColor !important; stroke-width: 0.25px !important; stroke-opacity: 0.4 !important; }
-      img { image-rendering: high-quality !important; image-rendering: -webkit-optimize-contrast !important; filter: contrast(1.04) saturate(1.05) !important; }
-    </style>
-    """
+    </style>"""
 
     if "<html" in html_content.lower():
         final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
-        if css_injection not in final_html: final_html = css_injection + html_content
     else:
-        final_html = f"<!doctype html><html><head><meta charset='utf-8'/><title>{slug}</title>{css_injection}</head><body>{html_content}</body></html>"
+        final_html = f"<!doctype html><html><head><meta charset='utf-8'/>{css_injection}</head><body>{html_content}</body></html>"
 
     temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf_path = temp_pdf.name
     temp_pdf.close()
+
+    app_domain = request.host
 
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
                 args=[
-                    '--force-device-scale-factor=2', # 🚀 Kept your local settings
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--disable-lcd-text',
-                    '--font-render-hinting=none',    # 🚀 MUST HAVE FOR LINUX KERNING! Stops text stretching.
+                    '--font-render-hinting=none',
                     '--disable-web-security',
                 ]
             )
-
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
-                device_scale_factor=3,               # 🚀 Kept your local settings
-                ignore_https_errors=True,
+                device_scale_factor=1,
             )
             page = context.new_page()
 
-            # 🚀 INTERCEPTOR FOR DEADLOCKS (Loads assets from disk, not network)
+            # 🚀 BULLETPROOF ANTI-DEADLOCK ROUTER
             def intercept_route(route):
                 url = route.request.url
+                
+                # Serve local static files safely
                 if "/static/" in url:
-                    fp = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
-                    if os.path.exists(fp): return route.fulfill(path=fp)
+                    try:
+                        fp = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
+                        if os.path.exists(fp): 
+                            return route.fulfill(path=fp)
+                    except: pass
+                    
+                # Serve local template files safely
                 elif "/templates/" in url:
-                    fp = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
-                    if os.path.exists(fp): return route.fulfill(path=fp)
-                if "127.0.0.1" in url or "localhost" in url:
+                    try:
+                        fp = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
+                        if os.path.exists(fp): 
+                            return route.fulfill(path=fp)
+                    except: pass
+                
+                # ABORT requests to our own server that weren't fulfilled locally to prevent hanging!
+                if app_domain in url or "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
+                
+                # Allow external requests (like Google Fonts) to pass through naturally
                 route.continue_()
 
             page.route("**/*", intercept_route)
-
-            # 🚀 LOAD HTML DIRECTLY (Fixes the infinite spinning)
-            page.set_content(final_html, wait_until="load", timeout=20000)
-
-            # Wait for ALL fonts to fully load
+            
+            # 🚀 STRICT TIMEOUT: Prevent the initial page load from hanging
+            page.set_content(final_html, wait_until="load", timeout=15000)
+            
+            # 🚀 THE KILL SWITCH: Force the font loader to stop waiting after 3 seconds!
             page.evaluate("""async () => {
-                await document.fonts.ready;
-                document.body.getBoundingClientRect();
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-                const allFonts = [...document.fonts];
-                await Promise.all(allFonts.map(f => f.loaded.catch(() => null)));
+                await Promise.race([
+                    document.fonts.ready,
+                    new Promise(resolve => setTimeout(resolve, 3000))
+                ]);
             }""")
-
-            page.wait_for_timeout(2500)
+            
             page.emulate_media(media="screen")
-
+            
             page.pdf(
                 path=pdf_path,
-                format="A4",
+                width="794px",
+                height="1123px",
                 print_background=True,
                 margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
-                prefer_css_page_size=True,
+                prefer_css_page_size=False,
                 scale=1.0
             )
             browser.close()
 
         return send_file(
-            pdf_path, 
-            as_attachment=True, 
-            download_name=f"HQ_Resume_{eid}.pdf",
+            pdf_path,
+            as_attachment=True,
+            download_name=f"Resume_{eid}.pdf",
             mimetype="application/pdf"
         )
-        
     except Exception as e:
         return f"Error generating PDF: {str(e)}", 500
-        
     finally:
         if os.path.exists(pdf_path):
-            try: os.remove(pdf_path)
-            except: pass
+            try:
+                os.remove(pdf_path)
+            except:
+                pass
 
     return "Invalid export mode", 400
 
