@@ -497,7 +497,7 @@
         print-color-adjust: exact !important; 
       }
 
-      /* 🚀 1. NATIVE BASE: Pure, unmodified vector text for normal text */
+      /* 🚀 1. NATIVE BASE */
       .a4 * {
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
@@ -506,13 +506,20 @@
         -webkit-user-select: text !important;
       }
 
-      /* 🚀 2. ILLUMINATED NEAR-WHITE TEXT */
+      /* 🚀 2. PURE BRIGHT WHITE (NO GLOW, NO BLUR) */
       .print-white-text {
-          /* A microscopic stroke to maintain solid edges during printing */
-          -webkit-text-stroke: 0.02px currentColor !important;
+          /* Remove the stroke completely so the font stays its native, elegant weight */
+          -webkit-text-stroke: 0px transparent !important;
           
-          /* A pure white/light backlight to illuminate it, completely replacing the muddy black shadow */
-          text-shadow: 0px 0px 3px rgba(255, 255, 255, 0.8) !important;
+          /* Force maximum opacity */
+          opacity: 1 !important;
+          
+          /* The Alpha-Stacking Trick: Paint the exact text on top of itself 3 times with 0px blur. 
+             This fills in the anti-aliasing gaps and forces maximum RGB brightness without bleeding! */
+          text-shadow: 
+              0px 0px 0px #ffffff, 
+              0px 0px 0px #ffffff, 
+              0px 0px 0px #ffffff !important;
       }
 
       @page { 
