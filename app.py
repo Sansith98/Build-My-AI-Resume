@@ -3097,8 +3097,7 @@ def export_headless(eid):
         html_content = "\n".join(raw_html)
     else:
         html_content = str(raw_html)
-    
-@app.get("/export/hq-pdf/<eid>")
+    @app.get("/export/hq-pdf/<eid>")
 def export_hq_pdf(eid):
     import tempfile, re
     from playwright.sync_api import sync_playwright
@@ -3108,8 +3107,9 @@ def export_hq_pdf(eid):
     if isinstance(html_content, list):
         html_content = "\n".join(html_content)
 
-    # Minimal injection — NO font-family override, NO letter-spacing
+    # 🚀 ATS FONT FIX: Force standard network loading of fonts so the PDF preserves character maps!
     css_injection = """<style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
       html, body {
         margin: 0 !important; padding: 0 !important;
@@ -3117,6 +3117,7 @@ def export_hq_pdf(eid):
         height: auto !important; overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        font-family: 'Inter', sans-serif !important;
       }
       .a4 {
         page-break-after: always !important; break-after: page !important;
@@ -3127,6 +3128,7 @@ def export_hq_pdf(eid):
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        font-family: 'Inter', sans-serif !important;
       }
     </style>"""
 
@@ -3143,7 +3145,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=full',
+                    '--font-render-hinting=none',
                     '--disable-web-security',
                 ]
             )
@@ -3163,14 +3165,17 @@ def export_hq_pdf(eid):
                     if os.path.exists(fp): return route.fulfill(path=fp)
                 if "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
-                # Block external font servers — fonts are base64 embedded
-                if "fonts.googleapis.com" in url or "fonts.gstatic.com" in url:
-                    return route.abort()
+                
+                # 🚀 CRITICAL FIX: DO NOT ABORT GOOGLE FONTS. Let them download naturally!
                 route.continue_()
 
             page.route("**/*", intercept_route)
             page.set_content(final_html, wait_until="load", timeout=20000)
+            
+            # 🚀 WAIT FOR FONTS TO PARSE
+            page.evaluate("async () => { await document.fonts.ready; }")
             page.wait_for_timeout(1500)
+            
             page.emulate_media(media="screen")
             page.pdf(
                 path=pdf_path,

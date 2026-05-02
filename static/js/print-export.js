@@ -207,41 +207,7 @@ async function triggerPlaywrightExport() {
       const pageEls = document.querySelectorAll(PAGE_SELECTOR);
       if (!pageEls.length) { alert("Resume page not found!"); return; }
 
-      // ── STEP 1: Extract fonts already loaded in THIS browser ──────────
-      // document.fonts contains every font the browser has already parsed.
-      // We convert them to base64 — same bytes the browser used to render.
-      await document.fonts.ready;
-      const fontFaceCSS = await (async () => {
-        const rules = [];
-        for (const sheet of document.styleSheets) {
-          try {
-            for (const rule of sheet.cssRules) {
-              if (rule instanceof CSSFontFaceRule) {
-                // Get the src URL from the rule
-                const src = rule.style.getPropertyValue('src');
-                const urlMatch = src.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
-                if (urlMatch) {
-                  try {
-                    const resp = await fetch(urlMatch[1]);
-                    const buf  = await resp.arrayBuffer();
-                    const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
-                    const mime = urlMatch[1].endsWith('.woff2') ? 'font/woff2' : 'font/woff';
-                    const newSrc = src.replace(urlMatch[0], `url(data:${mime};base64,${b64})`);
-                    rules.push(`@font-face { ${rule.style.cssText.replace(src, newSrc)} }`);
-                  } catch(e) {
-                    rules.push(rule.cssText); // fallback: keep original rule
-                  }
-                } else {
-                  rules.push(rule.cssText); // already a data URI or local()
-                }
-              }
-            }
-          } catch(e) {}
-        }
-        return rules.length ? `<style>\n${rules.join('\n')}\n</style>` : '';
-      })();
-
-      // ── STEP 2: Collect template CSS only ────────────────────────────
+      // ── STEP 1: Collect template CSS only ────────────────────────────
       const styleTags = Array.from(document.querySelectorAll("style"))
         .filter(s => {
           const t = s.textContent || "";
@@ -269,7 +235,7 @@ async function triggerPlaywrightExport() {
       }, "");
       const pseudoStyleTag = pseudoCSS ? `<style>${pseudoCSS}</style>` : "";
 
-      // ── STEP 3: Clone pages with computed styles inlined ──────────────
+      // ── STEP 2: Clone pages with computed styles inlined ──────────────
       const allPagesHTML = Array.from(pageEls).map((pageEl) => {
         const clone    = pageEl.cloneNode(true);
         const liveEls  = Array.from(pageEl.querySelectorAll('*'));
@@ -283,12 +249,12 @@ async function triggerPlaywrightExport() {
 
           const computed = window.getComputedStyle(live);
 
+          // 🚀 TEXT SPACING LOCK (Width removed to prevent Linux wrapping)
           const props = [
             'fontSize','lineHeight','fontWeight','fontFamily','fontStyle',
             'letterSpacing','wordSpacing','color','textAlign','textTransform',
             'whiteSpace','wordBreak',
             'position','display','top','left','right','bottom',
-            'width','height','minWidth','minHeight','maxWidth','maxHeight',
             'margin','marginTop','marginRight','marginBottom','marginLeft',
             'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
             'boxSizing','overflow','zIndex','opacity',
@@ -346,13 +312,13 @@ async function triggerPlaywrightExport() {
         return clone.outerHTML;
       }).join("\n");
 
-      // ── STEP 4: Build self-contained HTML ─────────────────────────────
+      // ── STEP 3: Build self-contained HTML (No Base64 Hack) ────────────
       const fullHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  ${fontFaceCSS}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   ${styleTags}
   ${pseudoStyleTag}
   <style>
@@ -363,6 +329,7 @@ async function triggerPlaywrightExport() {
       overflow: visible !important; background: #fff !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+      font-family: 'Inter', sans-serif !important;
     }
     #pages, #workspace, .wrap {
       transform: none !important; zoom: 1 !important;
@@ -396,7 +363,7 @@ async function triggerPlaywrightExport() {
 </body>
 </html>`;
 
-      // ── STEP 5: Send to server ────────────────────────────────────────
+      // ── STEP 4: Send to server ────────────────────────────────────────
       const res = await fetch("/api/save_export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
