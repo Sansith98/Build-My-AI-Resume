@@ -3108,7 +3108,7 @@ def export_headless(eid):
           margin: 0 !important; padding: 0 !important; background: #fff !important; 
           height: auto !important; overflow: visible !important; 
           -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
-          font-family: 'Inter', sans-serif !important;
+          
       }
       
       /* 🚀 FIX 1: Blank Second Page Fix. */
@@ -3174,7 +3174,7 @@ def export_hq_pdf(eid):
           margin: 0 !important; padding: 0 !important; background: #fff !important; 
           height: auto !important; overflow: visible !important; 
           -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
-          font-family: 'Inter', sans-serif !important;
+          
       }
       body > div, .app-root, #root {
           position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
@@ -3186,7 +3186,7 @@ def export_hq_pdf(eid):
           width: 794px !important; height: 1123px !important; margin: 0 !important; padding: 0 !important;
           box-shadow: none !important; border: none !important; overflow: hidden !important;
       }
-      .text, .normal-line, .bullet-line { min-width: 102% !important; overflow: visible !important; }
+      .text, .normal-line, .bullet-line { overflow: visible !important; }
       * { -webkit-font-smoothing: subpixel-antialiased !important; -moz-osx-font-smoothing: auto !important; text-rendering: geometricPrecision !important; }
     </style>
     """  
@@ -3233,8 +3233,11 @@ def export_hq_pdf(eid):
                     if os.path.exists(filepath):
                         return route.fulfill(path=filepath)
                 
-                # Instantly kill broken localhost links so the server doesn't hang
-                if "127.0.0.1" in url or "localhost" in url:
+                # Block localhost AND all external font/tracking requests
+                # Fonts are already base64-embedded in the HTML — no network needed
+                if ("127.0.0.1" in url or "localhost" in url or
+                    "fonts.googleapis.com" in url or "fonts.gstatic.com" in url or
+                    "google-analytics.com" in url or "googletagmanager.com" in url):
                     return route.abort()
                     
                 route.continue_()
@@ -3245,7 +3248,7 @@ def export_hq_pdf(eid):
             # Changed to "load" and added a strict timeout so it literally cannot spin forever
             page.set_content(final_html, wait_until="load", timeout=15000)
 
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2500)
             page.emulate_media(media="screen")
 
             page.pdf(

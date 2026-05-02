@@ -312,7 +312,26 @@
 
           // 🚀 THE TYPOGRAPHY LOCK: Force Playwright to use your exact screen metrics
           const computed = window.getComputedStyle(live);
-          const textProps = ['fontSize', 'lineHeight', 'fontWeight', 'fontFamily', 'letterSpacing', 'wordSpacing', 'color', 'textAlign', 'whiteSpace', 'wordBreak'];
+          const textProps = [
+            // Typography
+            'fontSize', 'lineHeight', 'fontWeight', 'fontFamily',
+            'letterSpacing', 'wordSpacing', 'color', 'textAlign',
+            'whiteSpace', 'wordBreak', 'textTransform', 'fontStyle',
+            // Layout & position
+            'position', 'display', 'top', 'left', 'right', 'bottom',
+            'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+            'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+            'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+            'boxSizing', 'overflow', 'zIndex', 'opacity',
+            'flexDirection', 'alignItems', 'justifyContent', 'flex', 'gap',
+            'gridTemplateColumns', 'gridColumn', 'gridRow',
+            // Visual
+            'backgroundColor', 'borderRadius',
+            'border', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft',
+            'transform', 'transformOrigin',
+            // SVG
+            'fill', 'stroke', 'strokeWidth',
+          ];
           textProps.forEach(prop => {
             const val = computed[prop];
             if (val && val !== '') {
