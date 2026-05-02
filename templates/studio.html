@@ -11156,80 +11156,77 @@ delPageBtn.addEventListener('click', ()=>{
 
       const data = payload.data || {};
 
-      // 🚀 DYNAMIC FONT & WEIGHT SCANNER + DEBUGGER
-    const usedFonts = {};
-    
-    pages.forEach(page => {
-        (page.elements || []).forEach(el => {
-            if (el.style && el.style.fontFamily) {
-                let fontName = el.style.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
-                const sysFonts = ['Inter', 'Arial', 'Courier New', 'Times New Roman', 'Verdana', 'sans-serif', 'serif', 'monospace', 'system-ui'];
-                
-                if (fontName && !sysFonts.includes(fontName)) {
-                    if (!usedFonts[fontName]) usedFonts[fontName] = new Set();
-                    
-                    // Extract the exact weight from layout.json
-                    let weight = String(el.style.fontWeight || '400');
-                    if (weight === 'normal') weight = '400';
-                    if (weight === 'bold') weight = '700';
-                    
-                    usedFonts[fontName].add(weight);
-                }
-            }
-        });
-    });
+// 🚀 DYNAMIC FONT, WEIGHT & SIZE SCANNER + DEBUGGER
+      const usedFonts = {};
+      const usedSizes = new Set(); // 🚀 NEW: Tracks sizes for the debugger
+      
+      pages.forEach(page => {
+          (page.elements || []).forEach(el => {
+              if (el.style) {
+                  // 1. Capture the sizes for the debugger
+                  if (el.style.fontSize) {
+                      usedSizes.add(el.style.fontSize);
+                  }
 
-    // 🚀 THE DEBUGGER: Visual Table in the Console
-    const fontDebugData = [];
+                  // 2. Capture and map the Fonts and Weights
+                  if (el.style.fontFamily) {
+                      let fontName = el.style.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+                      const sysFonts = ['Inter', 'Arial', 'Courier New', 'Times New Roman', 'Verdana', 'sans-serif', 'serif', 'monospace', 'system-ui'];
+                      
+                      if (fontName && !sysFonts.includes(fontName)) {
+                          if (!usedFonts[fontName]) usedFonts[fontName] = new Set();
+                          
+                          // Extract the exact weight from layout.json
+                          let weight = String(el.style.fontWeight || '400');
+                          if (weight === 'normal') weight = '400';
+                          if (weight === 'bold') weight = '700';
+                          
+                          usedFonts[fontName].add(weight);
+                      }
+                  }
+              }
+          });
+      });
 
-    Object.keys(usedFonts).forEach(fontName => {
-        // Safety net: Always include 400 and 700. 
-        // Why? If the user clicks the "Bold" or "Unbold" button while editing, we don't want the text to look blurry!
-        usedFonts[fontName].add('400');
-        usedFonts[fontName].add('700');
+      // 🚀 THE DEBUGGER & LOADER: Visual Table in the Console
+      const fontDebugData = [];
 
-        let formattedName = fontName.replace(/ /g, '+');
-        
-        // Sort weights mathematically (e.g., 300;400;700) so the Google API accepts them cleanly
-        let weights = Array.from(usedFonts[fontName]).sort((a, b) => parseInt(a) - parseInt(b)).join(';');
-        
-        // Add to our debugger table
-        fontDebugData.push({ "Font Family": fontName, "Weights Requested": weights });
+      Object.keys(usedFonts).forEach(fontName => {
+          // Safety net: Always include 400 and 700 in case the user clicks "Bold" later!
+          usedFonts[fontName].add('400');
+          usedFonts[fontName].add('700');
 
-        let fontUrl = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@${weights}&display=swap`;
-        
-        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
-            let link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = fontUrl;
-            document.head.appendChild(link);
-        }
-    });
-
-    // Print the Debugger to the Console
-    if (fontDebugData.length > 0) {
-        console.log("%c🟢 [FONT SCANNER DEBUGGER] Custom Fonts dynamically loaded:", "color: #10b981; font-weight: bold; font-size: 13px;");
-        console.table(fontDebugData);
-    } else {
-        console.log("%c🟢 [FONT SCANNER DEBUGGER] No custom fonts required. Using system defaults.", "color: #3b82f6; font-weight: bold;");
-    }
-
-      usedFonts.forEach(fontName => {
           let formattedName = fontName.replace(/ /g, '+');
-          let fontUrl = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@300;400;500;600;700;800&display=swap`;
+          
+          // Sort weights mathematically (e.g., 300;400;700) so the Google API accepts them cleanly
+          let weights = Array.from(usedFonts[fontName]).sort((a, b) => parseInt(a) - parseInt(b)).join(';');
+          
+          // Add to our debugger table
+          fontDebugData.push({ "Font Family": fontName, "Weights Requested": weights });
+
+          let fontUrl = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@${weights}&display=swap`;
+          
+          // Inject the Google Font into the page
           if (!document.querySelector(`link[href="${fontUrl}"]`)) {
               let link = document.createElement('link');
               link.rel = 'stylesheet';
               link.href = fontUrl;
               document.head.appendChild(link);
-              console.log("Dynamically loaded template font:", fontName);
           }
       });
 
-
-
-
+      // 🚀 Print the Tables to the Console
+      if (fontDebugData.length > 0) {
+          console.log("%c🟢 [FONT SCANNER] Custom Fonts dynamically loaded:", "color: #10b981; font-weight: bold; font-size: 13px;");
+          console.table(fontDebugData);
+      } else {
+          console.log("%c🟢 [FONT SCANNER] No custom fonts required. Using system defaults.", "color: #3b82f6; font-weight: bold;");
+      }
       
+      // 🚀 Print the Detected Sizes to the Console
+      const sizeArray = Array.from(usedSizes);
+      console.log("%c📏 [SIZE SCANNER] Font sizes detected in this template:", "color: #8b5cf6; font-weight: bold;", sizeArray.length ? sizeArray.join(', ') : "None");
+
       window.__currentResumeData = data; // Save data for later when adding pages
       window.hiddenPageTemplate = null;
 
