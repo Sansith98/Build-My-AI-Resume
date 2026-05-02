@@ -3096,188 +3096,54 @@ def export_headless(eid):
     else:
         html_content = str(raw_html)
     
-    css_injection = """
-    <style>
-      /* 🚀 FORCE FONT DOWNLOAD TO PREVENT LINUX FALLBACKS */
-      
-
-      /* 🚀 PDF GLOBAL RESET */
-      @page { size: 794px 1123px; margin: 0; }
-      
-      html, body { 
-          margin: 0 !important; padding: 0 !important; background: #fff !important; 
-          height: auto !important; overflow: visible !important; 
-          -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
-          
-      }
-      
-      /* 🚀 FIX 1: Blank Second Page Fix. */
-      body > div, .app-root, #root {
-          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
-          background: transparent !important; padding: 0 !important; margin: 0 !important;
-      }
-
-      /* 🚀 FIX 2: Page clip fix. */
-      .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
-          page-break-after: always !important; break-after: page !important;
-          display: block !important; position: relative !important; transform: none !important; zoom: 1 !important;
-          width: 794px !important; height: 1123px !important;
-          margin: 0 !important; padding: 0 !important;
-          box-shadow: none !important; border: none !important; overflow: hidden !important;
-      }
-
-      /* 🚀 PRESERVE EXACT MEASUREMENTS */
-      .text, .normal-line, .bullet-line {
-          white-space: pre-wrap !important;
-          overflow: visible !important;
-      }
-
-      * {
-          -webkit-font-smoothing: antialiased !important;
-          -moz-osx-font-smoothing: grayscale !important;
-          text-rendering: geometricPrecision !important;
-      }
-    </style>
-    """  
-    
-    # Prevent nested documents
-    if "<html" in html_content.lower():
-        # Inject style tag nicely
-        page = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
-        if css_injection not in page: page = css_injection + html_content
-    else:
-        # Wrap raw content
-        page = f"<!doctype html><html><head><meta charset='utf-8'/><title>{slug}</title>{css_injection}</head><body>{html_content}</body></html>"
-        
-    return make_response(page, 200)
-
-@app.get("/static/fonts/<path:filename>")
-def serve_font(filename):
-    return send_from_directory(os.path.join(BASE_DIR, 'static', 'fonts'), filename)
-
 @app.get("/export/hq-pdf/<eid>")
 def export_hq_pdf(eid):
     import tempfile
-    import os
-    import re
-    from playwright.sync_api import sync_playwright
+    import base64
+    import io
+    from PIL import Image
 
-    # 1. Grab the HTML locally
     item = _get_export_payload(eid)
-    raw_html = item.get("html", "")
-    html_content = "\n".join(raw_html) if isinstance(raw_html, list) else str(raw_html)
-    
-    css_injection = """
-    <style>
-      @page { size: 794px 1123px; margin: 0; }
-      html, body { 
-          margin: 0 !important; padding: 0 !important; background: #fff !important; 
-          height: auto !important; overflow: visible !important; 
-          -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; 
-          
-      }
-      body > div, .app-root, #root {
-          position: static !important; overflow: visible !important; height: auto !important; width: auto !important;
-          background: transparent !important; padding: 0 !important; margin: 0 !important;
-      }
-      .a4, .a4-page, .page-export-wrapper div[style*="position: absolute"] {
-          page-break-after: always !important; break-after: page !important;
-          display: block !important; position: relative !important; transform: none !important; zoom: 1 !important;
-          width: 794px !important; height: 1123px !important; margin: 0 !important; padding: 0 !important;
-          box-shadow: none !important; border: none !important; overflow: hidden !important;
-      }
-      .text, .normal-line, .bullet-line { overflow: visible !important; }
-      * { -webkit-font-smoothing: subpixel-antialiased !important; -moz-osx-font-smoothing: auto !important; text-rendering: geometricPrecision !important; }
-    </style>
-    """  
-    if "<html" in html_content.lower():
-        final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
-        if css_injection not in final_html: final_html = css_injection + html_content
-    else:
-        final_html = f"<!doctype html><html><head><meta charset='utf-8'/>{css_injection}</head><body>{html_content}</body></html>"
 
-    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    pdf_path = temp_pdf.name
-    temp_pdf.close()
+    if item.get("mode") == "images":
+        images_b64 = item.get("images", [])
+        if not images_b64:
+            return "No images found", 400
 
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--enable-font-antialiasing',
-                    '--force-color-profile=srgb',
-                    '--font-render-hinting=full',
-                ]
+        pil_images = []
+        for img_data in images_b64:
+            b64 = img_data.split(",", 1)[1]
+            img_bytes = base64.b64decode(b64)
+            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            pil_images.append(pil_img)
+
+        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        pdf_path = temp_pdf.name
+        temp_pdf.close()
+
+        try:
+            pil_images[0].save(
+                pdf_path,
+                save_all=True,
+                append_images=pil_images[1:],
+                resolution=150,
+                format="PDF"
             )
-
-            context = browser.new_context(
-                viewport={"width": 794, "height": 1123},
-                device_scale_factor=1,
-                ignore_https_errors=True,
+            return send_file(
+                pdf_path,
+                as_attachment=True,
+                download_name=f"Resume_{eid}.pdf",
+                mimetype="application/pdf"
             )
-            page = context.new_page()
-
-            # 🚀 THE ANTI-DEADLOCK ROUTER
-            # This intercepts image/asset requests and reads them directly from the hard drive!
-            def intercept_route(route):
-                url = route.request.url
-                # Serve static files (like uploaded avatars) instantly
-                if "/static/" in url:
-                    filepath = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
-                    if os.path.exists(filepath):
-                        return route.fulfill(path=filepath)
-                # Serve template files (like SVG icons) instantly
-                elif "/templates/" in url:
-                    filepath = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
-                    if os.path.exists(filepath):
-                        return route.fulfill(path=filepath)
-                
-                # Block localhost AND all external font/tracking requests
-                # Fonts are already base64-embedded in the HTML — no network needed
-                if ("127.0.0.1" in url or "localhost" in url or
-                    "fonts.googleapis.com" in url or "fonts.gstatic.com" in url or
-                    "google-analytics.com" in url or "googletagmanager.com" in url):
-                    return route.abort()
-                    
-                route.continue_()
-
-            page.route("**/*", intercept_route)
-
-            # 2. Inject HTML directly into Playwright
-            # Changed to "load" and added a strict timeout so it literally cannot spin forever
-            page.set_content(final_html, wait_until="load", timeout=15000)
-
-            page.wait_for_timeout(2500)
-            page.emulate_media(media="screen")
-
-            page.pdf(
-                path=pdf_path,
-                width="210mm",
-                height="297mm",
-                print_background=True,
-                margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
-                prefer_css_page_size=False,
-                scale=1.0
-            )
-            browser.close()
-
-        return send_file(
-            pdf_path, 
-            as_attachment=True, 
-            download_name=f"HQ_Resume_{eid}.pdf",
-            mimetype="application/pdf"
-        )
-        
-    except Exception as e:
-        return f"Error generating PDF: {str(e)}", 500
-        
-    finally:
-        if os.path.exists(pdf_path):
+        except Exception as e:
+            return f"Error generating PDF: {str(e)}", 500
+        finally:
             try:
                 os.remove(pdf_path)
             except:
                 pass
+
+    return "Invalid export mode", 400
 
 # =============================================================================
 # SEO Routes (Robots & Sitemap)

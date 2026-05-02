@@ -189,22 +189,13 @@
   // the server via /api/save_export, then redirects to
   // /export/hq-pdf/<eid> for server-side PDF generation.
   // ============================================================
-  async function triggerPlaywrightExport() {
-    // Points to the new main button on the toolbar instead of the old deleted one
+async function triggerPlaywrightExport() {
     const btn = document.getElementById("mainExportBtn");
     const originalHTML = btn.innerHTML;
-
-    // 1. Show loading state
-    btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            style="animation: spin 1s linear infinite;">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-        </svg>
-        Generating...`;
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Generating...`;
     btn.style.opacity = "0.7";
     btn.style.pointerEvents = "none";
 
-    // Inject spin animation if not already present
     if (!document.getElementById("pw-spin-style")) {
       const spinStyle = document.createElement("style");
       spinStyle.id = "pw-spin-style";
@@ -213,292 +204,71 @@
     }
 
     try {
-      // 2. Grab ALL resume page elements (not just the first!)
       const pageEls = document.querySelectorAll(PAGE_SELECTOR);
-      if (!pageEls.length) {
-        alert("Resume page not found! Make sure your resume is loaded.");
-        return;
+      if (!pageEls.length) { alert("Resume page not found!"); return; }
+
+      // Load html2canvas if not already loaded
+      if (!window.html2canvas) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
       }
 
-      // 3. Collect ALL <style> tags from the page (FILTERED)
-      const styleTags = Array.from(document.querySelectorAll("style"))
-        .filter(s => {
-          const text = s.textContent || "";
-          // Skip studio UI styles — only keep template/resume content styles
-          const isStudioStyle = (
-            text.includes("--toolbar-h") ||
-            text.includes("--wrap-top-pad") ||
-            text.includes("#workspace") ||
-            text.includes("#toolbar") ||
-            text.includes("100vh") ||
-            text.includes("applyZoom") ||
-            text.includes("spin {") ||
-            text.includes("export-modal") ||
-            text.includes("mainExportBtn") ||
-            text.includes("zoomCtl") ||
-            text.includes("bulletproof-print-container")
-          );
-          return !isStudioStyle;
-        })
-        .map(s => s.outerHTML)
-        .join("\n");
+      // Capture each page using YOUR browser's rendering — identical to what you see on screen
+      const pageImages = [];
+      for (const pageEl of pageEls) {
+        const originalTransform = pageEl.style.transform;
+        pageEl.style.transform = "none";
 
-      // Carry ::before / ::after rules (skill bars use ::before for fill width)
-      // getComputedStyle cannot read pseudo-elements so we extract them from stylesheets
-      const pseudoCSS = Array.from(document.styleSheets).reduce((acc, sheet) => {
-        try {
-          return acc + Array.from(sheet.cssRules)
-            .filter(r => r.selectorText && (r.selectorText.includes('::before') || r.selectorText.includes('::after')))
-            .map(r => r.cssText)
-            .join("\n");
-        } catch(e) { return acc; }
-      }, "");
-      const pseudoStyleTag = pseudoCSS ? `<style>${pseudoCSS}</style>` : "";
-
-      // 4. Collect ALL <link rel="stylesheet"> tags AND embed the font files as Base64
-      const linkEls = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
-      
-      const inlinedFontStyles = await Promise.all(
-        linkEls.map(async (link) => {
-          try {
-            let href = link.href;
-            if (href.includes('fonts.googleapis.com') && href.includes('Inter') && !href.includes('800')) {
-              href = href.replace(/wght@([^&"]+)/, (match, weights) => {
-                const list = weights.split(';').filter(w => w);
-                if (!list.includes('800')) list.push('800');
-                return 'wght@' + list.sort((a,b) => a-b).join(';');
-              });
-            }
-            
-            const resp = await fetch(href);
-            let css = await resp.text();
-            
-            // Embed every woff2 as base64 safely (prevents call stack crash)
-            const woff2Urls = [...css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g)].map(m => m[1]);
-            for (const woff2Url of woff2Urls) {
-              try {
-                const fontResp = await fetch(woff2Url);
-                const blob = await fontResp.blob();
-                const base64Url = await new Promise((resolve) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => resolve(reader.result);
-                  reader.readAsDataURL(blob);
-                });
-                // Replace the Google URL directly with the generated Data URL
-                css = css.replace(woff2Url, base64Url);
-              } catch (e) {}
-            }
-            return `<style>\n/* Inlined from ${href} */\n${css}\n</style>`;
-          } catch (err) {
-            return link.outerHTML;
+        const canvas = await html2canvas(pageEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          width: 794,
+          height: 1123,
+          windowWidth: 794,
+          windowHeight: 1123,
+          logging: false,
+          imageTimeout: 5000,
+          onclone: (doc, el) => {
+            el.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(e => e.remove());
+            el.querySelectorAll('*').forEach(e => {
+              e.classList.remove('active', 'multi', 'editing');
+              if (e.style.outline && e.style.outline.includes('rgb(59')) e.style.outline = 'none';
+              if (e.style.boxShadow && e.style.boxShadow.includes('rgb(59')) e.style.boxShadow = 'none';
+            });
+            el.style.transform = 'none';
+            el.style.boxShadow = 'none';
+            el.style.outline = 'none';
           }
-        })
-      );
-      const linkTags = inlinedFontStyles.join("\n");
+        });
 
-      
-// 5. Build self-contained page clones safely without double-measuring
-      const allPagesHTML = Array.from(pageEls).map((pageEl) => {
-        const clone = pageEl.cloneNode(true);
-        const liveEls  = Array.from(pageEl.querySelectorAll('*'));
-        const cloneEls = Array.from(clone.querySelectorAll('*'));
+        pageEl.style.transform = originalTransform;
+        pageImages.push(canvas.toDataURL('image/png', 1.0));
+      }
 
-        const rootStyles = getComputedStyle(document.documentElement);
-        
-        for (let i = 0; i < liveEls.length; i++) {
-          const live = liveEls[i];
-          const cloneEl = cloneEls[i];
-          if (!cloneEl) continue;
-
-          // 🚀 THE TYPOGRAPHY LOCK: Force Playwright to use your exact screen metrics
-          const computed = window.getComputedStyle(live);
-          const textProps = [
-            // Typography
-            'fontSize', 'lineHeight', 'fontWeight', 'fontFamily',
-            'letterSpacing', 'wordSpacing', 'color', 'textAlign',
-            'whiteSpace', 'wordBreak', 'textTransform', 'fontStyle',
-            // Layout & position
-            'position', 'display', 'top', 'left', 'right', 'bottom',
-            'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
-            'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
-            'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
-            'boxSizing', 'overflow', 'zIndex', 'opacity',
-            'flexDirection', 'alignItems', 'justifyContent', 'flex', 'gap',
-            'gridTemplateColumns', 'gridColumn', 'gridRow',
-            // Visual
-            'backgroundColor', 'borderRadius',
-            'border', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft',
-            'transform', 'transformOrigin',
-            // SVG
-            'fill', 'stroke', 'strokeWidth',
-          ];
-          textProps.forEach(prop => {
-            const val = computed[prop];
-            if (val && val !== '') {
-              cloneEl.style[prop] = val;
-            }
-          });
-
-          // 🚀 ONLY COPY CSS VARIABLES (Required for Skill Dots)
-          const liveStyle = live.getAttribute('style') || '';
-          const varMatches = [...liveStyle.matchAll(/var\((--[^)]+)\)/g)];
-          varMatches.forEach(match => {
-            const varName = match[1].trim();
-            const val = getComputedStyle(live).getPropertyValue(varName).trim() || rootStyles.getPropertyValue(varName).trim();
-            if (val) cloneEl.style.setProperty(varName, val);
-          });
-          if (live.style && live.style.length) {
-            for (let p = 0; p < live.style.length; p++) {
-              const prop = live.style[p];
-              if (prop.startsWith('--')) {
-                const val = live.style.getPropertyValue(prop);
-                if (val) cloneEl.style.setProperty(prop, val);
-              }
-            }
-          }
-
-          // Clean editor UI artifacts
-          cloneEl.classList.remove("active", "multi", "editing");
-          if (cloneEl.style.outline && cloneEl.style.outline.includes('rgb(59')) cloneEl.style.outline = 'none';
-          if (cloneEl.style.boxShadow && cloneEl.style.boxShadow.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
-        }
-
-        // Remove editor-only elements
-        clone.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(el => el.remove());
-
-        // Lock the page to exact dimensions
-        clone.style.setProperty('position', 'relative', 'important');
-        clone.style.setProperty('width', '794px', 'important');
-        clone.style.setProperty('height', '1123px', 'important');
-        clone.style.setProperty('overflow', 'hidden', 'important');
-        clone.style.setProperty('margin', '0', 'important');
-        clone.style.setProperty('padding', '0', 'important');
-        clone.style.setProperty('box-shadow', 'none', 'important');
-        clone.style.setProperty('outline', 'none', 'important');
-        clone.style.setProperty('border', 'none', 'important');
-        clone.style.setProperty('transform', 'none', 'important');
-        clone.style.setProperty('page-break-after', 'always', 'important');
-        clone.style.setProperty('break-after', 'page', 'important');
-
-        return clone.outerHTML;
-      }).join("\n");
-
-      // 6. Build a complete self-contained HTML document
-      //    Playwright receives this and renders it exactly as seen on screen
-      const fullHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  ${linkTags}
-  ${styleTags}
-  ${pseudoStyleTag}
-  <style>
-    /* HARD RESET — cancels any studio layout CSS that leaked through styleTags */
-    html, body {
-      height: auto !important;
-      overflow: visible !important;
-      width: 794px !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    #pages, #workspace, .wrap {
-      transform: none !important;
-      zoom: 1 !important;
-      height: auto !important;
-      overflow: visible !important;
-      position: static !important;
-    }
-    
-    /* Playwright render overrides */
-    @page { size: 794px 1123px; margin: 0 !important; }
-    html, body {
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #fff !important;
-      width: 794px !important;
-    }
-    /* 
-      THE BLUR FIX:
-      #pages-export wraps all .a4 divs exactly as #pages does in the studio.
-      This gives .a4 divs the same offset parent context they had in the editor,
-      so position:absolute children land on exact integer pixels — no blur.
-    */
-    #pages-export {
-      position: relative !important;
-      width: 794px !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: #fff !important;
-    }
-    .a4 {
-      position: relative !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 794px !important;
-      height: 1123px !important;
-      margin: 0 !important;
-      box-shadow: none !important;
-      outline: none !important;
-      border: none !important;
-      overflow: hidden !important;
-      page-break-after: always !important;
-      break-after: page !important;
-      transform: none !important;
-    }
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      -webkit-font-smoothing: subpixel-antialiased !important;
-      -moz-osx-font-smoothing: auto !important;
-      text-rendering: geometricPrecision !important;
-      font-kerning: normal !important;
-    }
-    svg text, svg tspan {
-      paint-order: stroke fill !important;
-    }
-    
-
-    img {
-      image-rendering: high-quality !important;
-      image-rendering: -webkit-optimize-contrast !important;
-    }
-  </style>
-</head>
-<body style="margin:0; padding:0; background:#fff;">
-  <div id="pages-export">
-    ${allPagesHTML}
-  </div>
-</body>
-</html>`;
-
-      // 7. Save the HTML to the server — get back a real eid
+      // Send images to server — server compiles into PDF
       const res = await fetch("/api/save_export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html: fullHTML, slug: "resume" })
+        body: JSON.stringify({ images: pageImages, slug: "resume", mode: "images" })
       });
 
-      if (!res.ok) {
-        alert("Server error while preparing export. Please try again.");
-        return;
-      }
-
+      if (!res.ok) { alert("Server error. Please try again."); return; }
       const result = await res.json();
-      if (!result.ok || !result.eid) {
-        alert("Failed to prepare export. Please try again.");
-        return;
-      }
+      if (!result.ok || !result.eid) { alert("Failed to prepare export."); return; }
 
-      // 8. Redirect to Playwright PDF route — download starts automatically
       window.location.href = `/export/hq-pdf/${result.eid}`;
 
     } catch (err) {
-      console.error("Playwright export error:", err);
+      console.error("Export error:", err);
       alert("Export failed: " + err.message);
-
     } finally {
-      // Reset button after a delay (in case redirect is slow)
       setTimeout(() => {
         btn.innerHTML = originalHTML;
         btn.style.opacity = "1";
@@ -506,7 +276,6 @@
       }, 4000);
     }
   }
-
 
   // ============================================================
   // BROWSER PRINT — Used by Standard and Browser HQ buttons
