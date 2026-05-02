@@ -3888,10 +3888,22 @@ function getActivePage(){
 }
 
 // --- NEW: Helper to inline SVGs so they can be colored ---
+// --- NEW: Helper to inline SVGs so they can be colored ---
 function inlineSvgIntoElement(el, img, src) {
     if (!src) return;
-    el.dataset.originalSrc = src; // ✅ Save the source path before the img tag is destroyed!
-    const isSvg = src.toLowerCase().endsWith('.svg') || src.startsWith('data:image/svg+xml');
+
+    // 🚀 FIX: Prevent "Mixed Content" errors from old JSON files.
+    // If the JSON accidentally saved a hardcoded HTTP IP address, strip it off and force a relative path!
+    let fetchSrc = src;
+    try {
+        if (fetchSrc.startsWith('http')) {
+            const url = new URL(fetchSrc);
+            fetchSrc = url.pathname + url.search; 
+        }
+    } catch(e) {}
+
+    el.dataset.originalSrc = fetchSrc; // Save the cleaned source path so future exports are fixed!
+    const isSvg = fetchSrc.toLowerCase().endsWith('.svg') || fetchSrc.startsWith('data:image/svg+xml');
     if (!isSvg) return;
 
     el.classList.add('svg-el');
@@ -3905,7 +3917,6 @@ function inlineSvgIntoElement(el, img, src) {
                 svgNode.style.width = '100%';
                 svgNode.style.height = '100%';
                 svgNode.style.display = 'block';
-                /* svgNode.style.pointerEvents = 'none'; <-- REMOVE THIS */
 
                 // Convert standard fills to currentColor so your color picker can control it
                 svgNode.querySelectorAll('path, rect, circle, polygon, polyline, ellipse, line').forEach(shape => {
@@ -3929,14 +3940,17 @@ function inlineSvgIntoElement(el, img, src) {
         } catch(e) { console.warn("SVG Processing Error", e); }
     };
 
-    if (src.startsWith('data:image/svg+xml')) {
+    if (fetchSrc.startsWith('data:image/svg+xml')) {
         try {
-            const parts = src.split(',');
-            let svgText = src.includes(';base64,') ? atob(parts[1]) : decodeURIComponent(parts[1]);
+            const parts = fetchSrc.split(',');
+            let svgText = fetchSrc.includes(';base64,') ? atob(parts[1]) : decodeURIComponent(parts[1]);
             processSvgString(svgText);
         } catch(e){ console.warn("SVG Decode Error", e); }
     } else {
-        fetch(src).then(r => r.text()).then(processSvgString).catch(e => console.warn(e));
+        fetch(fetchSrc)
+          .then(r => r.text())
+          .then(processSvgString)
+          .catch(e => console.warn("Failed to fetch SVG:", e));
     }
 }
 

@@ -3093,10 +3093,8 @@ def export_hq_pdf(eid):
     if isinstance(html_content, list):
         html_content = "\n".join(html_content)
 
-    # 🚀 ATS FONT FIX + NANO-SHARPENING (Targeting HTML DIVs)
-    # 🚀 ATS FONT FIX + ULTIMATE WILDCARD SHARPENING
+
     css_injection = """<style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
       html, body {
         margin: 0 !important; padding: 0 !important;
@@ -3112,17 +3110,16 @@ def export_hq_pdf(eid):
         box-shadow: none !important; border: none !important;
       }
       
-      /* 🚀 THE ULTIMATE WILDCARD OVERRIDE */
-      /* This targets EVERY SINGLE ELEMENT inside the resume, completely ignoring inline editor styles */
+      /* 🚀 THE ULTIMATE WILDCARD OVERRIDE (Now Font-Agnostic!) */
+      /* This targets EVERY element to add the stroke, but LEAVES their font-family alone! */
       .a4 * {
-        font-family: 'Inter', sans-serif !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: geometricPrecision !important;
         
-        /* Forces the micro-stroke onto EVERY letter */
+        /* Forces the micro-stroke onto EVERY letter of ANY font */
         -webkit-text-stroke: 0.025px currentColor !important; 
       }
       
