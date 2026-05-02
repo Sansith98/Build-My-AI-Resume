@@ -3165,7 +3165,6 @@ def export_hq_pdf(eid):
                     except: pass
                 if app_domain in url or "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
-                # Block external font servers — fonts are base64 embedded in the HTML
                 if "fonts.googleapis.com" in url or "fonts.gstatic.com" in url:
                     return route.abort()
                 route.continue_()
@@ -3205,8 +3204,6 @@ def export_hq_pdf(eid):
             os.remove(pdf_path)
         except:
             pass
-
-    return "Invalid export mode", 400
 
 # =============================================================================
 # SEO Routes (Robots & Sitemap)
