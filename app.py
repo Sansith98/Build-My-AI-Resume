@@ -3276,6 +3276,78 @@ def debug_fonts():
         return f"<h3>Target Fonts Installed:</h3><pre>{output}</pre><hr><h3>All System Fonts:</h3><pre>{fonts}</pre>"
     except Exception as e:
         return f"Error checking fonts: {str(e)}"
+# =============================================================================
+# DEBUG: Check Playwright Network Font Loading
+# =============================================================================
+@app.route('/debug/playwright-fonts')
+def debug_playwright_fonts():
+    from playwright.sync_api import sync_playwright
+    import json
+
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+      </style>
+    </head>
+    <body>
+      <p style="font-family: 'Inter', sans-serif; font-weight: 700;">Testing Inter Font Loading</p>
+    </body>
+    </html>
+    """
+
+    font_network_traffic = []
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=['--disable-web-security']
+            )
+            page = browser.new_context().new_page()
+
+            # 🚀 SPY ON THE NETWORK: Catch every font file downloaded from Google
+            page.on(
+                "response", 
+                lambda response: font_network_traffic.append(response.url) 
+                if "fonts.gstatic.com" in response.url or "fonts.googleapis.com" in response.url 
+                else None
+            )
+
+            # Load the page and wait for the network to finish
+            page.set_content(html_content, wait_until="networkidle")
+
+            # 🚀 SPY ON THE DOM: Ask JavaScript if the fonts are actively loaded in memory
+            dom_fonts = page.evaluate("""() => {
+                return Array.from(document.fonts).map(f => {
+                    return { family: f.family, weight: f.weight, status: f.status };
+                });
+            }""")
+
+            browser.close()
+
+            # Format the output beautifully
+            html_out = "<h2>1. Network Traffic (Did Playwright reach Google?)</h2>"
+            if font_network_traffic:
+                html_out += "<ul>" + "".join([f"<li style='color:green;'>Downloaded: {url}</li>" for url in font_network_traffic]) + "</ul>"
+            else:
+                html_out += "<p style='color:red;'>FAILED: No network traffic to Google Fonts. Server might be blocking it!</p>"
+
+            html_out += "<h2>2. DOM Font Status (Are they actively applied to the text?)</h2>"
+            if dom_fonts:
+                html_out += "<ul>" + "".join([f"<li>Family: <b>{f['family']}</b> | Weight: {f['weight']} | Status: <span style='color:green;'>{f['status']}</span></li>" for f in dom_fonts]) + "</ul>"
+            else:
+                html_out += "<p style='color:red;'>FAILED: document.fonts is empty!</p>"
+
+            return html_out
+
+    except Exception as e:
+        return f"<h3>Error running Playwright:</h3><pre>{str(e)}</pre>"
+
+        
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
