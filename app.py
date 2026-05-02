@@ -3094,6 +3094,7 @@ def export_hq_pdf(eid):
         html_content = "\n".join(html_content)
 
     # 🚀 ATS FONT FIX + NANO-SHARPENING (Targeting HTML DIVs)
+    # 🚀 ATS FONT FIX + ULTIMATE WILDCARD SHARPENING
     css_injection = """<style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
@@ -3103,7 +3104,6 @@ def export_hq_pdf(eid):
         height: auto !important; overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
       }
       .a4 {
         page-break-after: always !important; break-after: page !important;
@@ -3111,35 +3111,23 @@ def export_hq_pdf(eid):
         overflow: hidden !important; transform: none !important;
         box-shadow: none !important; border: none !important;
       }
-      * {
+      
+      /* 🚀 THE ULTIMATE WILDCARD OVERRIDE */
+      /* This targets EVERY SINGLE ELEMENT inside the resume, completely ignoring inline editor styles */
+      .a4 * {
+        font-family: 'Inter', sans-serif !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
         -webkit-font-smoothing: antialiased !important;
         -moz-osx-font-smoothing: grayscale !important;
         text-rendering: geometricPrecision !important;
+        
+        /* Forces the micro-stroke onto EVERY letter */
+        -webkit-text-stroke: 0.025px currentColor !important; 
       }
-
-      /* 🚀 THE MAGIC FIX: Apply Nano-Stroke directly to your HTML text DIVs */
-      .text, .normal-line, .bullet-line {
-          /* At device_scale_factor=3, 0.015px is a microscopic ghost-line */
-          -webkit-text-stroke: 0.015px currentColor !important;
-      }
-
-      /* 🚀 Keep SVG text sharp as well (if any icons use it) */
-      text, tspan {
-          paint-order: stroke fill !important;
-          stroke-linejoin: round !important;
-      }
-      text[fill="#ffffff"], tspan[fill="#ffffff"] {
-          stroke: #ffffff !important;
-          stroke-width: 0.04px !important; 
-          stroke-opacity: 0.25 !important; 
-      }
-      text[fill="#050505"], text[fill="#111827"], text[fill="#374151"] {
-          stroke: currentColor !important;
-          stroke-width: 0.015px !important; 
-          stroke-opacity: 0.1 !important; 
+      
+      svg text, svg tspan { 
+          paint-order: stroke fill !important; 
       }
     </style>"""
 
