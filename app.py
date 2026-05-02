@@ -214,12 +214,14 @@ def _save_to_disk(eid, data_dict):
 
 @app.post("/api/save_export")
 def save_export():
-    data = request.get_json(force=True)
-    html  = data.get("html", "")
-    slug  = data.get("slug", "resume")
-    eid   = secrets.token_urlsafe(16)
+    data   = request.get_json(force=True)
+    html   = data.get("html", "")
+    slug   = data.get("slug", "resume")
+    mode   = data.get("mode", "html")
+    images = data.get("images", [])
+    eid    = secrets.token_urlsafe(16)
     
-    _save_to_disk(eid, {"ts": time.time(), "slug": slug, "html": html, "structured": {}})
+    _save_to_disk(eid, {"ts": time.time(), "slug": slug, "html": html, "mode": mode, "images": images, "structured": {}})
     return jsonify(ok=True, eid=eid)
 
 def _get_export_payload(eid: str) -> Dict[str, Any]:
