@@ -3100,50 +3100,100 @@ def export_headless(eid):
     
 @app.get("/export/hq-pdf/<eid>")
 def export_hq_pdf(eid):
-    import tempfile
-    import base64
-    import io
-    from PIL import Image
+    import tempfile, re
+    from playwright.sync_api import sync_playwright
 
-    item = _get_export_payload(eid)
+    item         = _get_export_payload(eid)
+    html_content = item.get("html", "")
+    if isinstance(html_content, list):
+        html_content = "\n".join(html_content)
 
-    if item.get("mode") == "images":
-        images_b64 = item.get("images", [])
-        if not images_b64:
-            return "No images found", 400
+    # Minimal injection — NO font-family override, NO letter-spacing
+    css_injection = """<style>
+      @page { size: 794px 1123px; margin: 0; }
+      html, body {
+        margin: 0 !important; padding: 0 !important;
+        background: #fff !important; width: 794px !important;
+        height: auto !important; overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .a4 {
+        page-break-after: always !important; break-after: page !important;
+        width: 794px !important; height: 1123px !important;
+        overflow: hidden !important; transform: none !important;
+        box-shadow: none !important; border: none !important;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    </style>"""
 
-        pil_images = []
-        for img_data in images_b64:
-            b64 = img_data.split(",", 1)[1]
-            img_bytes = base64.b64decode(b64)
-            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-            pil_images.append(pil_img)
+    final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
 
-        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        pdf_path = temp_pdf.name
-        temp_pdf.close()
+    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    pdf_path = temp_pdf.name
+    temp_pdf.close()
 
-        try:
-            pil_images[0].save(
-                pdf_path,
-                save_all=True,
-                append_images=pil_images[1:],
-                resolution=150,
-                format="PDF"
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    '--enable-font-antialiasing',
+                    '--force-color-profile=srgb',
+                    '--font-render-hinting=full',
+                    '--disable-web-security',
+                ]
             )
-            return send_file(
-                pdf_path,
-                as_attachment=True,
-                download_name=f"Resume_{eid}.pdf",
-                mimetype="application/pdf"
+            context = browser.new_context(
+                viewport={"width": 794, "height": 1123},
+                device_scale_factor=1,
             )
-        except Exception as e:
-            return f"Error generating PDF: {str(e)}", 500
-        finally:
-            try:
-                os.remove(pdf_path)
-            except:
-                pass
+            page = context.new_page()
+
+            def intercept_route(route):
+                url = route.request.url
+                if "/static/" in url:
+                    fp = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
+                    if os.path.exists(fp): return route.fulfill(path=fp)
+                elif "/templates/" in url:
+                    fp = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
+                    if os.path.exists(fp): return route.fulfill(path=fp)
+                if "127.0.0.1" in url or "localhost" in url:
+                    return route.abort()
+                # Block external font servers — fonts are base64 embedded
+                if "fonts.googleapis.com" in url or "fonts.gstatic.com" in url:
+                    return route.abort()
+                route.continue_()
+
+            page.route("**/*", intercept_route)
+            page.set_content(final_html, wait_until="load", timeout=20000)
+            page.wait_for_timeout(1500)
+            page.emulate_media(media="screen")
+            page.pdf(
+                path=pdf_path,
+                width="794px",
+                height="1123px",
+                print_background=True,
+                margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
+                prefer_css_page_size=False,
+                scale=1.0
+            )
+            browser.close()
+
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name=f"Resume_{eid}.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        return f"Error generating PDF: {str(e)}", 500
+    finally:
+        try: os.remove(pdf_path)
+        except: pass
 
     return "Invalid export mode", 400
 

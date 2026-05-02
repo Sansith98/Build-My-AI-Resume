@@ -197,66 +197,210 @@ async function triggerPlaywrightExport() {
     btn.style.pointerEvents = "none";
 
     if (!document.getElementById("pw-spin-style")) {
-      const spinStyle = document.createElement("style");
-      spinStyle.id = "pw-spin-style";
-      spinStyle.innerHTML = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
-      document.head.appendChild(spinStyle);
+      const s = document.createElement("style");
+      s.id = "pw-spin-style";
+      s.innerHTML = `@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`;
+      document.head.appendChild(s);
     }
 
     try {
       const pageEls = document.querySelectorAll(PAGE_SELECTOR);
       if (!pageEls.length) { alert("Resume page not found!"); return; }
 
-      // Load html2canvas if not already loaded
-      if (!window.html2canvas) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
+      // ── STEP 1: Extract fonts already loaded in THIS browser ──────────
+      // document.fonts contains every font the browser has already parsed.
+      // We convert them to base64 — same bytes the browser used to render.
+      await document.fonts.ready;
+      const fontFaceCSS = await (async () => {
+        const rules = [];
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule instanceof CSSFontFaceRule) {
+                // Get the src URL from the rule
+                const src = rule.style.getPropertyValue('src');
+                const urlMatch = src.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
+                if (urlMatch) {
+                  try {
+                    const resp = await fetch(urlMatch[1]);
+                    const buf  = await resp.arrayBuffer();
+                    const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
+                    const mime = urlMatch[1].endsWith('.woff2') ? 'font/woff2' : 'font/woff';
+                    const newSrc = src.replace(urlMatch[0], `url(data:${mime};base64,${b64})`);
+                    rules.push(`@font-face { ${rule.style.cssText.replace(src, newSrc)} }`);
+                  } catch(e) {
+                    rules.push(rule.cssText); // fallback: keep original rule
+                  }
+                } else {
+                  rules.push(rule.cssText); // already a data URI or local()
+                }
+              }
+            }
+          } catch(e) {}
+        }
+        return rules.length ? `<style>\n${rules.join('\n')}\n</style>` : '';
+      })();
 
-      // Capture each page using YOUR browser's rendering — identical to what you see on screen
-      const pageImages = [];
-      for (const pageEl of pageEls) {
-        const originalTransform = pageEl.style.transform;
-        pageEl.style.transform = "none";
+      // ── STEP 2: Collect template CSS only ────────────────────────────
+      const styleTags = Array.from(document.querySelectorAll("style"))
+        .filter(s => {
+          const t = s.textContent || "";
+          return !(
+            t.includes("--toolbar-h") || t.includes("--wrap-top-pad") ||
+            t.includes("#workspace")  || t.includes("#toolbar") ||
+            t.includes("100vh")       || t.includes("applyZoom") ||
+            t.includes("spin {")      || t.includes("export-modal") ||
+            t.includes("mainExportBtn") || t.includes("zoomCtl") ||
+            t.includes("bulletproof-print-container")
+          );
+        })
+        .map(s => s.outerHTML)
+        .join("\n");
 
-        const canvas = await html2canvas(pageEl, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          width: 794,
-          height: 1123,
-          windowWidth: 794,
-          windowHeight: 1123,
-          logging: false,
-          imageTimeout: 5000,
-          onclone: (doc, el) => {
-            el.querySelectorAll('.handle, .g-handle, #multiBox, #marquee, .guide').forEach(e => e.remove());
-            el.querySelectorAll('*').forEach(e => {
-              e.classList.remove('active', 'multi', 'editing');
-              if (e.style.outline && e.style.outline.includes('rgb(59')) e.style.outline = 'none';
-              if (e.style.boxShadow && e.style.boxShadow.includes('rgb(59')) e.style.boxShadow = 'none';
-            });
-            el.style.transform = 'none';
-            el.style.boxShadow = 'none';
-            el.style.outline = 'none';
+      // Carry ::before/::after rules (skill bars)
+      const pseudoCSS = Array.from(document.styleSheets).reduce((acc, sheet) => {
+        try {
+          return acc + Array.from(sheet.cssRules)
+            .filter(r => r.selectorText && (
+              r.selectorText.includes('::before') || r.selectorText.includes('::after')
+            ))
+            .map(r => r.cssText).join("\n");
+        } catch(e) { return acc; }
+      }, "");
+      const pseudoStyleTag = pseudoCSS ? `<style>${pseudoCSS}</style>` : "";
+
+      // ── STEP 3: Clone pages with computed styles inlined ──────────────
+      const allPagesHTML = Array.from(pageEls).map((pageEl) => {
+        const clone    = pageEl.cloneNode(true);
+        const liveEls  = Array.from(pageEl.querySelectorAll('*'));
+        const cloneEls = Array.from(clone.querySelectorAll('*'));
+        const rootStyles = getComputedStyle(document.documentElement);
+
+        for (let i = 0; i < liveEls.length; i++) {
+          const live    = liveEls[i];
+          const cloneEl = cloneEls[i];
+          if (!cloneEl) continue;
+
+          const computed = window.getComputedStyle(live);
+
+          const props = [
+            'fontSize','lineHeight','fontWeight','fontFamily','fontStyle',
+            'letterSpacing','wordSpacing','color','textAlign','textTransform',
+            'whiteSpace','wordBreak',
+            'position','display','top','left','right','bottom',
+            'width','height','minWidth','minHeight','maxWidth','maxHeight',
+            'margin','marginTop','marginRight','marginBottom','marginLeft',
+            'padding','paddingTop','paddingRight','paddingBottom','paddingLeft',
+            'boxSizing','overflow','zIndex','opacity',
+            'flexDirection','alignItems','justifyContent','flex','gap',
+            'backgroundColor','borderRadius',
+            'border','borderTop','borderRight','borderBottom','borderLeft',
+            'transform','transformOrigin',
+            'fill','stroke','strokeWidth',
+          ];
+
+          props.forEach(prop => {
+            const val = computed[prop];
+            if (val && val !== '') cloneEl.style[prop] = val;
+          });
+
+          // Copy CSS custom properties (--dot-size, --bar-height etc.)
+          if (live.style && live.style.length) {
+            for (let p = 0; p < live.style.length; p++) {
+              const prop = live.style[p];
+              if (prop.startsWith('--')) {
+                const val = live.style.getPropertyValue(prop);
+                if (val) cloneEl.style.setProperty(prop, val);
+              }
+            }
           }
-        });
+          const liveAttrStyle = live.getAttribute('style') || '';
+          [...liveAttrStyle.matchAll(/var\((--[^)]+)\)/g)].forEach(m => {
+            const varName = m[1].trim();
+            const val = computed.getPropertyValue(varName).trim()
+                     || rootStyles.getPropertyValue(varName).trim();
+            if (val) cloneEl.style.setProperty(varName, val);
+          });
 
-        pageEl.style.transform = originalTransform;
-        pageImages.push(canvas.toDataURL('image/png', 1.0));
-      }
+          // Clean editor artifacts
+          cloneEl.classList.remove("active", "multi", "editing");
+          if (cloneEl.style.outline?.includes('rgb(59'))   cloneEl.style.outline = 'none';
+          if (cloneEl.style.boxShadow?.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
+        }
 
-      // Send images to server — server compiles into PDF
+        clone.querySelectorAll('.handle,.g-handle,#multiBox,#marquee,.guide').forEach(el => el.remove());
+
+        clone.style.setProperty('position',        'relative', 'important');
+        clone.style.setProperty('width',           '794px',    'important');
+        clone.style.setProperty('height',          '1123px',   'important');
+        clone.style.setProperty('overflow',        'hidden',   'important');
+        clone.style.setProperty('margin',          '0',        'important');
+        clone.style.setProperty('padding',         '0',        'important');
+        clone.style.setProperty('box-shadow',      'none',     'important');
+        clone.style.setProperty('outline',         'none',     'important');
+        clone.style.setProperty('border',          'none',     'important');
+        clone.style.setProperty('transform',       'none',     'important');
+        clone.style.setProperty('page-break-after','always',   'important');
+        clone.style.setProperty('break-after',     'page',     'important');
+
+        return clone.outerHTML;
+      }).join("\n");
+
+      // ── STEP 4: Build self-contained HTML ─────────────────────────────
+      const fullHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  ${fontFaceCSS}
+  ${styleTags}
+  ${pseudoStyleTag}
+  <style>
+    @page { size: 794px 1123px; margin: 0; }
+    html, body {
+      margin: 0 !important; padding: 0 !important;
+      width: 794px !important; height: auto !important;
+      overflow: visible !important; background: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    #pages, #workspace, .wrap {
+      transform: none !important; zoom: 1 !important;
+      height: auto !important; overflow: visible !important;
+      position: static !important;
+    }
+    #pages-export {
+      position: relative !important; width: 794px !important;
+      margin: 0 !important; padding: 0 !important; background: #fff !important;
+    }
+    .a4 {
+      position: relative !important; width: 794px !important;
+      height: 1123px !important; margin: 0 !important;
+      overflow: hidden !important; transform: none !important;
+      page-break-after: always !important; break-after: page !important;
+      box-shadow: none !important; outline: none !important; border: none !important;
+    }
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      -webkit-font-smoothing: subpixel-antialiased !important;
+      -moz-osx-font-smoothing: auto !important;
+      text-rendering: geometricPrecision !important;
+    }
+    svg text, svg tspan { paint-order: stroke fill !important; }
+    img { image-rendering: high-quality !important; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#fff;">
+  <div id="pages-export">${allPagesHTML}</div>
+</body>
+</html>`;
+
+      // ── STEP 5: Send to server ────────────────────────────────────────
       const res = await fetch("/api/save_export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: pageImages, slug: "resume", mode: "images" })
+        body: JSON.stringify({ html: fullHTML, slug: "resume", mode: "html" })
       });
 
       if (!res.ok) { alert("Server error. Please try again."); return; }
