@@ -314,13 +314,21 @@
         return clone.outerHTML;
       }).join("\n");
 
+      // ── STEP 2.5: Steal the loaded Google Fonts directly from studio.html ────────
+      const fontLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+        .filter(l => l.href.includes('fonts.googleapis.com'))
+        .map(l => l.outerHTML)
+        .join("\n");
+
       // ── STEP 3: Build self-contained HTML (No Base64 Hack) ────────────
       const fullHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  ${fontLinks}
+  
   ${styleTags}
   ${pseudoStyleTag}
   <style>
