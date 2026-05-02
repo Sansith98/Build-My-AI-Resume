@@ -3187,7 +3187,7 @@ def export_hq_pdf(eid):
           box-shadow: none !important; border: none !important; overflow: hidden !important;
       }
       .text, .normal-line, .bullet-line { min-width: 102% !important; overflow: visible !important; }
-      * { -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; text-rendering: optimizeLegibility !important; }
+      * { -webkit-font-smoothing: subpixel-antialiased !important; -moz-osx-font-smoothing: auto !important; text-rendering: geometricPrecision !important; }
     </style>
     """  
     if "<html" in html_content.lower():

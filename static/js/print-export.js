@@ -312,10 +312,11 @@
 
           // 🚀 THE TYPOGRAPHY LOCK: Force Playwright to use your exact screen metrics
           const computed = window.getComputedStyle(live);
-          const textProps = ['fontSize', 'lineHeight', 'fontWeight', 'fontFamily', 'letterSpacing', 'color', 'textAlign'];
+          const textProps = ['fontSize', 'lineHeight', 'fontWeight', 'fontFamily', 'letterSpacing', 'wordSpacing', 'color', 'textAlign', 'whiteSpace', 'wordBreak'];
           textProps.forEach(prop => {
-            if (computed[prop] && computed[prop] !== 'normal') {
-              cloneEl.style[prop] = computed[prop];
+            const val = computed[prop];
+            if (val && val !== '') {
+              cloneEl.style[prop] = val;
             }
           });
 
