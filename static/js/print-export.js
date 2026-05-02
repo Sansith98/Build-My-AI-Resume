@@ -189,7 +189,10 @@
   // the server via /api/save_export, then redirects to
   // /export/hq-pdf/<eid> for server-side PDF generation.
   // ============================================================
-async function triggerPlaywrightExport() {
+// ============================================================
+  // PLAYWRIGHT EXPORT
+  // ============================================================
+  async function triggerPlaywrightExport() {
     const btn = document.getElementById("mainExportBtn");
     const originalHTML = btn.innerHTML;
     btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> Generating...`;
@@ -206,35 +209,6 @@ async function triggerPlaywrightExport() {
     try {
       const pageEls = document.querySelectorAll(PAGE_SELECTOR);
       if (!pageEls.length) { alert("Resume page not found!"); return; }
-
-      // ── STEP 0: Extract fonts already loaded in this browser as base64 ──
-      await document.fonts.ready;
-      let fontFaceCSS = "";
-      for (const sheet of document.styleSheets) {
-        try {
-          for (const rule of sheet.cssRules) {
-            if (rule instanceof CSSFontFaceRule) {
-              const src = rule.style.getPropertyValue('src');
-              const urlMatch = src.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
-              if (urlMatch) {
-                try {
-                  const resp = await fetch(urlMatch[1]);
-                  const buf  = await resp.arrayBuffer();
-                  const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
-                  const mime = urlMatch[1].includes('.woff2') ? 'font/woff2' : 'font/woff';
-                  const newSrc = src.replace(urlMatch[0], `url(data:${mime};base64,${b64})`);
-                  fontFaceCSS += `@font-face { ${rule.style.cssText.replace(src, newSrc)} }\n`;
-                } catch(e) {
-                  fontFaceCSS += rule.cssText + "\n";
-                }
-              } else {
-                fontFaceCSS += rule.cssText + "\n";
-              }
-            }
-          }
-        } catch(e) {}
-      }
-      fontFaceCSS = fontFaceCSS ? `<style>${fontFaceCSS}</style>` : "";
 
       // ── STEP 1: Collect template CSS only ────────────────────────────
       const styleTags = Array.from(document.querySelectorAll("style"))
@@ -317,7 +291,6 @@ async function triggerPlaywrightExport() {
             if (val) cloneEl.style.setProperty(varName, val);
           });
 
-          // Clean editor artifacts
           cloneEl.classList.remove("active", "multi", "editing");
           if (cloneEl.style.outline?.includes('rgb(59'))   cloneEl.style.outline = 'none';
           if (cloneEl.style.boxShadow?.includes('rgb(59')) cloneEl.style.boxShadow = 'none';
@@ -347,7 +320,7 @@ async function triggerPlaywrightExport() {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  ${fontFaceCSS}  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   ${styleTags}
   ${pseudoStyleTag}
   <style>
@@ -376,15 +349,6 @@ async function triggerPlaywrightExport() {
       page-break-after: always !important; break-after: page !important;
       box-shadow: none !important; outline: none !important; border: none !important;
     }
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      -webkit-font-smoothing: subpixel-antialiased !important;
-      -moz-osx-font-smoothing: auto !important;
-      text-rendering: geometricPrecision !important;
-    }
-    svg text, svg tspan { paint-order: stroke fill !important; }
-    img { image-rendering: high-quality !important; }
   </style>
 </head>
 <body style="margin:0;padding:0;background:#fff;">

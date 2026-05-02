@@ -3083,7 +3083,6 @@ def export_print(eid):
 </html>
 """
     return make_response(page, 200)
-
 @app.get("/export/hq-pdf/<eid>")
 def export_hq_pdf(eid):
     import tempfile, re, os
@@ -3094,7 +3093,9 @@ def export_hq_pdf(eid):
     if isinstance(html_content, list):
         html_content = "\n".join(html_content)
 
+    # 🚀 ATS FONT FIX + NANO-SHARPENING (Targeting HTML DIVs)
     css_injection = """<style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
       html, body {
         margin: 0 !important; padding: 0 !important;
@@ -3102,6 +3103,7 @@ def export_hq_pdf(eid):
         height: auto !important; overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        font-family: 'Inter', sans-serif !important;
       }
       .a4 {
         page-break-after: always !important; break-after: page !important;
@@ -3112,13 +3114,33 @@ def export_hq_pdf(eid):
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        -webkit-font-smoothing: subpixel-antialiased !important;
-        -moz-osx-font-smoothing: auto !important;
+        font-family: 'Inter', sans-serif !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
         text-rendering: geometricPrecision !important;
-        font-kerning: normal !important;
       }
-      svg text, svg tspan { paint-order: stroke fill !important; }
-      img { image-rendering: high-quality !important; }
+
+      /* 🚀 THE MAGIC FIX: Apply Nano-Stroke directly to your HTML text DIVs */
+      .text, .normal-line, .bullet-line {
+          /* At device_scale_factor=3, 0.015px is a microscopic ghost-line */
+          -webkit-text-stroke: 0.015px currentColor !important;
+      }
+
+      /* 🚀 Keep SVG text sharp as well (if any icons use it) */
+      text, tspan {
+          paint-order: stroke fill !important;
+          stroke-linejoin: round !important;
+      }
+      text[fill="#ffffff"], tspan[fill="#ffffff"] {
+          stroke: #ffffff !important;
+          stroke-width: 0.04px !important; 
+          stroke-opacity: 0.25 !important; 
+      }
+      text[fill="#050505"], text[fill="#111827"], text[fill="#374151"] {
+          stroke: currentColor !important;
+          stroke-width: 0.015px !important; 
+          stroke-opacity: 0.1 !important; 
+      }
     </style>"""
 
     if "<html" in html_content.lower():
@@ -3137,15 +3159,16 @@ def export_hq_pdf(eid):
             browser = p.chromium.launch(
                 headless=True,
                 args=[
+                    '--force-device-scale-factor=3',  # 🚀 FORCES RETINA/4K RESOLUTION
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=full',
+                    '--font-render-hinting=none',     # 🚀 Fixes Linux kerning
                     '--disable-web-security',
                 ]
             )
             context = browser.new_context(
                 viewport={"width": 794, "height": 1123},
-                device_scale_factor=1,
+                device_scale_factor=3,                # 🚀 ALLOWS MICROSCOPIC 0.015px STROKES TO RENDER
             )
             page = context.new_page()
 
@@ -3163,15 +3186,18 @@ def export_hq_pdf(eid):
                         if os.path.exists(fp):
                             return route.fulfill(path=fp)
                     except: pass
+                
+                # Prevent self-deadlock
                 if app_domain in url or "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
-                if "fonts.googleapis.com" in url or "fonts.gstatic.com" in url:
-                    return route.abort()
+                
+                # 🚀 CRITICAL FIX: DO NOT abort googleapis. Let them load so ATS text parsing works!
                 route.continue_()
 
             page.route("**/*", intercept_route)
             page.set_content(final_html, wait_until="load", timeout=15000)
 
+            # Wait 3 seconds max for fonts
             page.evaluate("""async () => {
                 await Promise.race([
                     document.fonts.ready,
@@ -3245,7 +3271,23 @@ if '--download-fonts' in sys.argv:
     sys.exit(0)
 
 
-
+# =============================================================================
+# DEBUG: Check Linux System Fonts
+# =============================================================================
+@app.route('/debug/fonts')
+def debug_fonts():
+    import os
+    # Runs the Linux command 'fc-list' which lists all installed system fonts
+    try:
+        fonts = os.popen('fc-list').read()
+        
+        # Filter it to easily see if Inter, DejaVu, or Liberation made it
+        relevant_fonts = [f for f in fonts.split('\n') if 'Inter' in f or 'DejaVu' in f or 'Liberation' in f]
+        
+        output = "\n".join(relevant_fonts) if relevant_fonts else "No Inter or DejaVu fonts found!"
+        return f"<h3>Target Fonts Installed:</h3><pre>{output}</pre><hr><h3>All System Fonts:</h3><pre>{fonts}</pre>"
+    except Exception as e:
+        return f"Error checking fonts: {str(e)}"
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
