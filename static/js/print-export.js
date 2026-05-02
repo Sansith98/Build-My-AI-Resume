@@ -207,6 +207,35 @@ async function triggerPlaywrightExport() {
       const pageEls = document.querySelectorAll(PAGE_SELECTOR);
       if (!pageEls.length) { alert("Resume page not found!"); return; }
 
+      // ── STEP 0: Extract fonts already loaded in this browser as base64 ──
+      await document.fonts.ready;
+      let fontFaceCSS = "";
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule instanceof CSSFontFaceRule) {
+              const src = rule.style.getPropertyValue('src');
+              const urlMatch = src.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/);
+              if (urlMatch) {
+                try {
+                  const resp = await fetch(urlMatch[1]);
+                  const buf  = await resp.arrayBuffer();
+                  const b64  = btoa(String.fromCharCode(...new Uint8Array(buf)));
+                  const mime = urlMatch[1].includes('.woff2') ? 'font/woff2' : 'font/woff';
+                  const newSrc = src.replace(urlMatch[0], `url(data:${mime};base64,${b64})`);
+                  fontFaceCSS += `@font-face { ${rule.style.cssText.replace(src, newSrc)} }\n`;
+                } catch(e) {
+                  fontFaceCSS += rule.cssText + "\n";
+                }
+              } else {
+                fontFaceCSS += rule.cssText + "\n";
+              }
+            }
+          }
+        } catch(e) {}
+      }
+      fontFaceCSS = fontFaceCSS ? `<style>${fontFaceCSS}</style>` : "";
+
       // ── STEP 1: Collect template CSS only ────────────────────────────
       const styleTags = Array.from(document.querySelectorAll("style"))
         .filter(s => {
@@ -318,7 +347,7 @@ async function triggerPlaywrightExport() {
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  ${fontFaceCSS}  
   ${styleTags}
   ${pseudoStyleTag}
   <style>

@@ -3094,10 +3094,7 @@ def export_hq_pdf(eid):
     if isinstance(html_content, list):
         html_content = "\n".join(html_content)
 
-    # 🚀 ATS FONT FIX: Force standard network loading of fonts so the PDF preserves character maps
-# 🚀 ATS FONT FIX + TEXT SHARPENING
     css_injection = """<style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       @page { size: 794px 1123px; margin: 0; }
       html, body {
         margin: 0 !important; padding: 0 !important;
@@ -3105,7 +3102,6 @@ def export_hq_pdf(eid):
         height: auto !important; overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
       }
       .a4 {
         page-break-after: always !important; break-after: page !important;
@@ -3116,34 +3112,13 @@ def export_hq_pdf(eid):
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        font-family: 'Inter', sans-serif !important;
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
+        -webkit-font-smoothing: subpixel-antialiased !important;
+        -moz-osx-font-smoothing: auto !important;
         text-rendering: geometricPrecision !important;
+        font-kerning: normal !important;
       }
-
-      /* 🚀 THE TEXT PRESENCE TRICK (From your older version) */
-      /* This dynamically fattens thin Linux fonts using currentColor. 
-         It automatically applies a white stroke to white text, and a dark stroke to dark text! */
-      .text, .normal-line, .bullet-line {
-          -webkit-text-stroke: 0.25px currentColor !important;
-      }
-
-      /* Sharpening for any remaining SVG elements */
-      text, tspan {
-          paint-order: stroke fill !important;
-          stroke-linejoin: round !important;
-      }
-      text[fill="#ffffff"], tspan[fill="#ffffff"] {
-          stroke: #ffffff !important;
-          stroke-width: 0.35px !important;
-          stroke-opacity: 0.55 !important;
-      }
-      text[fill="#050505"], text[fill="#111827"], text[fill="#374151"] {
-          stroke: currentColor !important;
-          stroke-width: 0.25px !important;
-          stroke-opacity: 0.4 !important;
-      }
+      svg text, svg tspan { paint-order: stroke fill !important; }
+      img { image-rendering: high-quality !important; }
     </style>"""
 
     if "<html" in html_content.lower():
@@ -3164,7 +3139,7 @@ def export_hq_pdf(eid):
                 args=[
                     '--enable-font-antialiasing',
                     '--force-color-profile=srgb',
-                    '--font-render-hinting=none',
+                    '--font-render-hinting=full',
                     '--disable-web-security',
                 ]
             )
@@ -3174,48 +3149,38 @@ def export_hq_pdf(eid):
             )
             page = context.new_page()
 
-            # 🚀 BULLETPROOF ANTI-DEADLOCK ROUTER
             def intercept_route(route):
                 url = route.request.url
-                
-                # Serve local static files safely
                 if "/static/" in url:
                     try:
                         fp = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
-                        if os.path.exists(fp): 
+                        if os.path.exists(fp):
                             return route.fulfill(path=fp)
                     except: pass
-                    
-                # Serve local template files safely
                 elif "/templates/" in url:
                     try:
                         fp = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
-                        if os.path.exists(fp): 
+                        if os.path.exists(fp):
                             return route.fulfill(path=fp)
                     except: pass
-                
-                # ABORT requests to our own server that weren't fulfilled locally to prevent hanging!
                 if app_domain in url or "127.0.0.1" in url or "localhost" in url:
                     return route.abort()
-                
-                # Allow external requests (like Google Fonts) to pass through naturally
+                # Block external font servers — fonts are base64 embedded in the HTML
+                if "fonts.googleapis.com" in url or "fonts.gstatic.com" in url:
+                    return route.abort()
                 route.continue_()
 
             page.route("**/*", intercept_route)
-            
-            # 🚀 STRICT TIMEOUT: Prevent the initial page load from hanging
             page.set_content(final_html, wait_until="load", timeout=15000)
-            
-            # 🚀 THE KILL SWITCH: Force the font loader to stop waiting after 3 seconds!
+
             page.evaluate("""async () => {
                 await Promise.race([
                     document.fonts.ready,
                     new Promise(resolve => setTimeout(resolve, 3000))
                 ]);
             }""")
-            
+
             page.emulate_media(media="screen")
-            
             page.pdf(
                 path=pdf_path,
                 width="794px",
@@ -3236,11 +3201,10 @@ def export_hq_pdf(eid):
     except Exception as e:
         return f"Error generating PDF: {str(e)}", 500
     finally:
-        if os.path.exists(pdf_path):
-            try:
-                os.remove(pdf_path)
-            except:
-                pass
+        try:
+            os.remove(pdf_path)
+        except:
+            pass
 
     return "Invalid export mode", 400
 
