@@ -62,7 +62,7 @@
           "x": 160,
           "y": 121,
           "width": 300,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -75,7 +75,8 @@
             "align": "left"
           },
           "options": {
-            "wrap": true
+            "wrap": true,
+            "hideIfEmpty": ""
           }
         },
         {
@@ -83,7 +84,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 480,
+          "x": 459,
           "y": 42,
           "width": 14,
           "height": 14,
@@ -96,17 +97,17 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/phone.svg"
+          "src": "/templates/SVG/phone.svg"
         },
         {
           "id": "contact_phone",
           "type": "text",
           "bind": "contact.phone",
           "page": 1,
-          "x": 505,
+          "x": 484,
           "y": 40,
           "width": 120,
-          "height": 24,
+          "height": 23,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -115,7 +116,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -128,7 +129,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 480,
+          "x": 459,
           "y": 72,
           "width": 14,
           "height": 14,
@@ -141,17 +142,17 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/email.svg"
+          "src": "/templates/SVG/email.svg"
         },
         {
           "id": "contact_email",
           "type": "text",
           "bind": "contact.email",
           "page": 1,
-          "x": 505,
+          "x": 484,
           "y": 70,
           "width": 120,
-          "height": 24,
+          "height": 23,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -160,7 +161,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -173,7 +174,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 480,
+          "x": 459,
           "y": 102,
           "width": 14,
           "height": 14,
@@ -186,14 +187,14 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/location.svg"
+          "src": "/templates/SVG/location.svg"
         },
         {
           "id": "contact_address",
           "type": "text",
           "bind": "contact.address",
           "page": 1,
-          "x": 505,
+          "x": 484,
           "y": 100,
           "width": 120,
           "height": 37,
@@ -205,7 +206,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left",
             "lineHeight": 1.4
           },
@@ -219,7 +220,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 640,
+          "x": 617,
           "y": 42,
           "width": 14,
           "height": 14,
@@ -232,17 +233,17 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/linkedin.svg"
+          "src": "/templates/SVG/linkedin.svg"
         },
         {
           "id": "contact_linkedin",
           "type": "text",
           "bind": "contact.linkedin",
           "page": 1,
-          "x": 665,
+          "x": 642,
           "y": 40,
-          "width": 120,
-          "height": 36,
+          "width": 141,
+          "height": 34,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -251,7 +252,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -264,7 +265,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 640,
+          "x": 617,
           "y": 72,
           "width": 14,
           "height": 14,
@@ -277,17 +278,17 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/portfolio.svg"
+          "src": "/templates/SVG/portfolio.svg"
         },
         {
           "id": "contact_portfolio",
           "type": "text",
           "bind": "contact.portfolio",
           "page": 1,
-          "x": 665,
+          "x": 642,
           "y": 70,
           "width": 120,
-          "height": 24,
+          "height": 23,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -296,7 +297,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -309,7 +310,7 @@
           "type": "image",
           "bind": null,
           "page": 1,
-          "x": 640,
+          "x": 617,
           "y": 102,
           "width": 14,
           "height": 14,
@@ -322,17 +323,17 @@
             "color": "#10b981"
           },
           "options": {},
-          "src": "http://127.0.0.1:5000/templates/SVG/github.svg"
+          "src": "/templates/SVG/github.svg"
         },
         {
           "id": "contact_github",
           "type": "text",
           "bind": "contact.github",
           "page": 1,
-          "x": 665,
+          "x": 642,
           "y": 100,
           "width": 120,
-          "height": 36,
+          "height": 34,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -341,7 +342,7 @@
             "fontWeight": 500,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#cbd5e1",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -357,7 +358,7 @@
           "x": 40,
           "y": 164,
           "width": 210,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -460,7 +461,7 @@
           "x": 40,
           "y": 451,
           "width": 210,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -490,7 +491,7 @@
           "x": 40,
           "y": 491,
           "width": 318,
-          "height": 601,
+          "height": 429,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -516,7 +517,7 @@
           "x": 290,
           "y": 164,
           "width": 460,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -546,7 +547,7 @@
           "x": 290,
           "y": 204,
           "width": 460,
-          "height": 190,
+          "height": 32,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -572,7 +573,7 @@
           "x": 369,
           "y": 451,
           "width": 280,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -602,7 +603,7 @@
           "x": 375,
           "y": 491,
           "width": 404,
-          "height": 498,
+          "height": 353,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -654,7 +655,7 @@
           "x": 40,
           "y": 7,
           "width": 210,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -710,7 +711,7 @@
           "x": 40,
           "y": 485,
           "width": 210,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -766,7 +767,7 @@
           "x": 40,
           "y": 301,
           "width": 210,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -796,7 +797,7 @@
           "x": 40,
           "y": 340,
           "width": 300,
-          "height": 119,
+          "height": 73,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -823,7 +824,7 @@
           "x": 349,
           "y": 7,
           "width": 460,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -879,7 +880,7 @@
           "x": 349,
           "y": 298,
           "width": 460,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -909,7 +910,7 @@
           "x": 349,
           "y": 338,
           "width": 460,
-          "height": 105,
+          "height": 76,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -936,7 +937,7 @@
           "x": 346,
           "y": 485,
           "width": 460,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -950,13 +951,13 @@
           },
           "options": {
             "staticText": "LANGUAGES",
-            "hideIfEmpty": "extrasText",
+            "hideIfEmpty": "",
             "wrap": true,
             "showTitleLine": true,
             "lineColor": "#10b981",
             "lineHeight": 3,
             "lineWidth": 35,
-            "titleGap": 8,
+            "titleGap": 15,
             "itemGap": 29
           }
         },
@@ -966,9 +967,9 @@
           "bind": "extrasText",
           "page": 2,
           "x": 346,
-          "y": 524,
+          "y": 529,
           "width": 401,
-          "height": 87,
+          "height": 56,
           "z": 5,
           "style": {
             "opacity": 1,
@@ -996,7 +997,7 @@
           "x": 40,
           "y": 886,
           "width": 460,
-          "height": 31,
+          "height": 29,
           "z": 5,
           "style": {
             "opacity": 1,

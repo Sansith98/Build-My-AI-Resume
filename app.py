@@ -19,6 +19,7 @@ import textwrap
 import traceback
 import requests  # <--- WE ADDED THIS LINE
 from flask import send_from_directory, current_app
+from custom_pdf_engine import generate_pdf_from_layout
 from copy import deepcopy
 from xml.etree import ElementTree as ET
 from pathlib import Path
@@ -1510,13 +1511,25 @@ def inject_data_into_svg(svg_src: str, data: dict, page_limit_y: float = 1060.0,
         for i, line in enumerate(lines):
             tspan = ET.Element(f"{ns}tspan")
             
-            # 🚀 INLINE STYLE PARSER
+            # 🚀 INLINE STYLE PARSER (Now with Italics and EM/STRONG fallbacks)
             is_bold = False
             is_under = False
+            is_italic = False
             
             if "<b>" in line and "</b>" in line:
                 is_bold = True
                 line = line.replace("<b>", "").replace("</b>", "")
+            if "<strong>" in line and "</strong>" in line:
+                is_bold = True
+                line = line.replace("<strong>", "").replace("</strong>", "")
+                
+            if "<i>" in line and "</i>" in line:
+                is_italic = True
+                line = line.replace("<i>", "").replace("</i>", "")
+            if "<em>" in line and "</em>" in line:
+                is_italic = True
+                line = line.replace("<em>", "").replace("</em>", "")
+                
             if "<u>" in line and "</u>" in line:
                 is_under = True
                 line = line.replace("<u>", "").replace("</u>", "")
@@ -1530,6 +1543,8 @@ def inject_data_into_svg(svg_src: str, data: dict, page_limit_y: float = 1060.0,
             
             if is_bold:
                 tspan.set("font-weight", "bold")
+            if is_italic:
+                tspan.set("font-style", "italic")
             if is_under:
                 tspan.set("text-decoration", "underline")
             
@@ -1549,6 +1564,8 @@ def inject_data_into_svg(svg_src: str, data: dict, page_limit_y: float = 1060.0,
                 g_tspan = ET.Element(f"{ns}tspan")
                 g_tspan.text = grade_text
                 if is_bold: g_tspan.set("font-weight", "bold")
+                if is_italic: g_tspan.set("font-style", "italic")
+                if is_italic: g_tspan.set("font-style", "italic") # 🚀 Added Italics to Grades!
                 
                 # 🚀 FIX: Anchor the text to the END (Right-Align)
                 g_tspan.set("text-anchor", "end") 
@@ -3233,26 +3250,37 @@ def serve_sitemap():
 
 
 if '--download-fonts' in sys.argv:
-    import requests, re
+    import requests, zipfile, io, os
     from pathlib import Path
-    FONT_URLS = [
-        "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
-    ]
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0"}
     
-    # Safely define font_dir using Path
     font_dir = Path(__file__).resolve().parent / "static" / "fonts"
     font_dir.mkdir(parents=True, exist_ok=True)
     
-    for font_url in FONT_URLS:
-        css = requests.get(font_url, headers=headers).text
-        for url in re.findall(r'url\((https://fonts\.gstatic\.com/[^)]+)\)', css):
-            filename = url.split('/')[-1]
-            dest = font_dir / filename
-            if not dest.exists():
-                print(f"Downloading {filename}...")
-                dest.write_bytes(requests.get(url).content)
-    print("All fonts downloaded to static/fonts/")
+    # 🚀 ULTIMATE FIX: Download the official ZIP files directly from Google.
+    # This guarantees 100% pure, uncorrupted .ttf files and bypasses all browser/CSS blocks!
+    FONTS = [
+        "Inter", "Roboto", "Open Sans", "Lato", "Montserrat", 
+        "Poppins", "Merriweather", "Playfair Display", "Raleway", "Nunito"
+    ]
+    
+    print("📥 Commencing deep-download of pure .ttf files...")
+    for f in FONTS:
+        print(f"Fetching {f}...")
+        url = f"https://fonts.google.com/download?family={f.replace(' ', '%20')}"
+        try:
+            r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            z = zipfile.ZipFile(io.BytesIO(r.content))
+            for info in z.infolist():
+                # ReportLab strictly requires static TTFs. Exclude VariableFonts.
+                if info.filename.endswith('.ttf') and 'VariableFont' not in info.filename:
+                    filename = os.path.basename(info.filename)
+                    dest = font_dir / filename
+                    if not dest.exists():
+                        dest.write_bytes(z.read(info))
+        except Exception as e:
+            print(f"❌ Failed to download {f}: {e}")
+            
+    print("✅ All fonts perfectly downloaded to static/fonts/")
     sys.exit(0)
 
 
@@ -3273,6 +3301,83 @@ def debug_fonts():
         return f"<h3>Target Fonts Installed:</h3><pre>{output}</pre><hr><h3>All System Fonts:</h3><pre>{fonts}</pre>"
     except Exception as e:
         return f"Error checking fonts: {str(e)}"
+
+@app.route('/api/export_python_pdf', methods=['POST'])
+def export_python_pdf():
+    try:
+        payload = request.json
+        if not payload:
+            raise ValueError("No JSON payload received.")
+            
+        layout_data = payload.get("layout", {})
+        user_data = payload.get("data", {})
+        
+        # 🚀 ANTI-CORRUPTION CHECK: Don't generate a PDF if the layout is empty
+        if not layout_data.get("pages"):
+            raise ValueError("The intercepted layout is empty. Cannot generate PDF.")
+        
+        json_string = json.dumps(layout_data)
+        
+        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        temp_pdf.close()
+        
+        generate_pdf_from_layout(layout_data, user_data, temp_pdf.name)        
+        # 🚀 ANTI-CORRUPTION FIX: Force the exact PDF mimetype so the browser doesn't guess
+        return send_file(temp_pdf.name, mimetype='application/pdf', as_attachment=True, download_name="Professional_Resume.pdf")
+        
+    except Exception as e:
+        print("Error generating Python PDF:", str(e))
+        return jsonify({"error": str(e)}), 500  
+@app.post("/api/generate_custom_pdf")
+def generate_custom_pdf_route():
+    from custom_pdf_engine import generate_pdf_from_layout
+    import tempfile
+
+    body = request.get_json(force=True)
+    layout = body.get("layout", {})
+    data   = body.get("data", {})
+
+    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    pdf_path = temp_pdf.name
+    temp_pdf.close()
+
+    try:
+        generate_pdf_from_layout(layout, data, pdf_path)
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name="Resume.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        return jsonify(ok=False, error=str(e)), 500
+    finally:
+        try: os.remove(pdf_path)
+        except: pass 
+
+@app.post("/api/debug_layout")
+def debug_layout():
+    body = request.get_json(force=True)
+    layout = body.get("layout", {})
+    # Return first 3 elements of first page so we can inspect
+    pages = layout.get("pages", [])
+    sample = []
+    if pages:
+        for el in pages[0].get("elements", [])[:5]:
+            sample.append({
+                "id": el.get("id"),
+                "type": el.get("type"),
+                "x": el.get("x"), "y": el.get("y"),
+                "w": el.get("w") or el.get("width"),
+                "h": el.get("h") or el.get("height"),
+                "rotation": el.get("rotation"),
+                "fontSize": el.get("style", {}).get("fontSize"),
+                "fontFamily": el.get("style", {}).get("fontFamily"),
+                "fontWeight": el.get("style", {}).get("fontWeight"),
+                "color": el.get("style", {}).get("color"),
+                "staticText": (el.get("options", {}).get("staticText") or "")[:40],
+            })
+    return jsonify(sample=sample)                   
 # =============================================================================
 # DEBUG: Check Playwright Network Font Loading
 # =============================================================================

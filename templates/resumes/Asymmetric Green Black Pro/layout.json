@@ -154,7 +154,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#d1d5db",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -199,7 +199,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#d1d5db",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -244,7 +244,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#d1d5db",
+            "color": "#ffffff",
             "align": "left",
             "lineHeight": 1.4
           },
@@ -290,7 +290,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#f7f7f7",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -335,7 +335,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#f7f7f7",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {
@@ -380,7 +380,7 @@
             "fontWeight": 400,
             "fontStyle": "normal",
             "textDecoration": "none",
-            "color": "#f7f7f7",
+            "color": "#ffffff",
             "align": "left"
           },
           "options": {

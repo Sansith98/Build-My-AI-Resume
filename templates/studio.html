@@ -944,14 +944,22 @@
   }
 
 
-.text-el .text{
-    padding:4px;
-    outline:none;
-    white-space:pre-wrap;
-    word-break:break-word;
-    /* no fixed line-height here – allow per-line control */
-  }
-
+.text-el .text {
+    padding: 4px;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+    
+    /* 🚀 THE GLOBAL SUB-PIXEL WRAP FIX */
+    /* Forces the internal text area to be 4 pixels wider than the visual bounding box. */
+    /* This perfectly absorbs any fractional scaling differences when zooming. */
+    width: calc(100% + 4px) !important;
+    margin-left: -2px !important; 
+    
+    /* Locks text sizes so mobile browsers don't inflate them */
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
   /* When a text box is in edit mode, show the text (I-beam) cursor */
 .text-el .text.editing{
   cursor:text;
@@ -1139,8 +1147,24 @@
 
 
 
-  .text-el .text ul, .text-el .text ol{ margin:0.25em 0 0.25em 1.2em; padding:0; list-style-position: outside; }
-  .text-el .text li{ margin: 0.1em 0; }
+  /* FIXED: Bullet Proof Lists (Consistent positioning on Zoom/Export) */
+  .text-el .text ul, .text-el .text ol { 
+      margin: 0.25em 0; 
+      padding: 0; 
+      list-style-position: inside; 
+  }
+  .text-el .text li { 
+      margin: 0.1em 0; 
+      padding-left: 1.2em; 
+      text-indent: -1.2em; 
+      line-height: inherit;
+  }
+  .text-el .text li::marker {
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      color: inherit;
+  }
   .rect-el{ background:var(--shape-fill); }
   .rounded-rect-el{
   background:var(--shape-fill);
@@ -2598,6 +2622,14 @@ html, body {
       <button id="fontIncreaseBtn" style="padding: 6px 16px; border: none; background: transparent; font-size: 18px; cursor: pointer; color: #374151;">+</button>
     </div>
 
+    <h4>Heading Styles</h4>
+    <div class="row seg" id="headingGroup" title="Heading Styles" style="margin-bottom: 12px;">
+      <button class="icon-btn" data-heading="h1" title="Title (H1)" style="font-weight: 700; font-size: 14px; width: 48px;">H1</button>
+      <button class="icon-btn" data-heading="h2" title="Subtitle (H2)" style="font-weight: 600; font-size: 13px; width: 48px;">H2</button>
+      <button class="icon-btn" data-heading="h3" title="Heading (H3)" style="font-weight: 600; font-size: 12px; width: 48px;">H3</button>
+      <button class="icon-btn" data-heading="p" title="Paragraph" style="font-weight: 400; font-size: 12px; width: 48px;">P</button>
+    </div>
+
     <div class="row" style="align-items: center; justify-content: space-between; margin-bottom: 12px;">
       <span style="font-size: 13px; color: #374151; font-weight: 600;">Corner Radius:</span>
       <div style="display: flex; align-items: center; background: #f3f4f6; border-radius: 6px; padding: 2px 8px; flex: 1; margin-left: 12px;">
@@ -3514,6 +3546,11 @@ const dotColGapSection = document.getElementById('dotColGapSection');
 const dotColGapSlider = document.getElementById('dotColGapSlider');
 const textColGapSlider = document.getElementById('textColGapSlider'); // New Text Slider
 
+// =========================================================================
+// UNIFIED SKILLS 2-COLUMN SYNC ENGINE
+// Automatically locks the Text Box and Dots Box together!
+// =========================================================================
+
 if (dotTwoColumnToggle) {
   dotTwoColumnToggle.addEventListener('change', () => {
     if (!selected || !selected.classList.contains('skills_dots')) return;
@@ -3522,18 +3559,22 @@ if (dotTwoColumnToggle) {
     const pairedText = page ? page.querySelector('[id="skills_names"], [data-id="skills_names"], [id="skills_text"]') : null;
 
     let dotsWidth = parseFloat(selected.style.width) || selected.offsetWidth;
-    let textWidth = pairedText ? (parseFloat(pairedText.style.width) || pairedText.offsetWidth) : 0;
-    
-    // Read independent gaps
     let dotsGap = parseInt(selected.style.getPropertyValue('--two-col-gap')) || 32;
-    let textGap = pairedText ? (parseInt(pairedText.style.getPropertyValue('--two-col-gap')) || 32) : 32;
 
     if (dotTwoColumnToggle.checked) {
       selected.classList.add('two-column-skills');
       selected.style.width = (dotsWidth * 2 + dotsGap) + "px"; 
+      
       if (pairedText) {
           pairedText.classList.add('two-column-skills');
-          pairedText.style.width = (textWidth * 2 + textGap) + "px";
+          // 🚀 1. Lock Widths and Gaps perfectly together
+          pairedText.style.width = selected.style.width; 
+          pairedText.style.setProperty('--two-col-gap', dotsGap + 'px'); 
+          
+          // 🚀 2. Lock Vertical Rhythm (Font Size) so rows never drift!
+          const textStyle = window.getComputedStyle(pairedText);
+          selected.style.fontSize = textStyle.fontSize;
+          selected.style.lineHeight = textStyle.lineHeight;
       }
       if (dotColGapSection) dotColGapSection.style.display = 'block';
     } else {
@@ -3541,7 +3582,7 @@ if (dotTwoColumnToggle) {
       selected.style.width = ((dotsWidth - dotsGap) / 2) + "px";
       if (pairedText) {
           pairedText.classList.remove('two-column-skills');
-          pairedText.style.width = ((textWidth - textGap) / 2) + "px";
+          pairedText.style.width = selected.style.width; // Lock widths
       }
       if (dotColGapSection) dotColGapSection.style.display = 'none';
     }
@@ -3551,39 +3592,41 @@ if (dotTwoColumnToggle) {
   });
 }
 
-// Slider 1: Controls Dots Only
+// Unified Slider: Controls BOTH Text and Dots simultaneously!
 if (dotColGapSlider) {
+  // Rename label so it makes sense in the UI
+  const label = dotColGapSlider.previousElementSibling;
+  if (label) label.textContent = "Column Gap (Syncs Text & Dots)";
+
   dotColGapSlider.addEventListener('input', () => {
     if (!selected || !selected.classList.contains('two-column-skills')) return;
+    const page = selected.closest('.a4');
+    const pairedText = page ? page.querySelector('[id="skills_names"], [data-id="skills_names"], [id="skills_text"]') : null;
+    
     const newGap = parseInt(dotColGapSlider.value, 10);
     const oldGap = parseInt(selected.style.getPropertyValue('--two-col-gap')) || 32;
-    selected.style.setProperty('--two-col-gap', newGap + 'px');
     
+    // 1. Update the Dots Box
+    selected.style.setProperty('--two-col-gap', newGap + 'px');
     let dotsWidth = parseFloat(selected.style.width) || selected.offsetWidth;
     selected.style.width = (dotsWidth + (newGap - oldGap)) + "px";
+
+    // 2. Lock the Text Box to match EXACTLY
+    if (pairedText) {
+        pairedText.style.setProperty('--two-col-gap', newGap + 'px');
+        pairedText.style.width = selected.style.width; // Force exact width match
+    }
+
     if (typeof updateSizeRotationInputsFromSelection === 'function') updateSizeRotationInputsFromSelection();
   });
   dotColGapSlider.addEventListener('change', () => pushUndo());
 }
 
-// Slider 2: Controls Text Only
+// Hide the redundant Text Gap slider completely
 if (textColGapSlider) {
-  textColGapSlider.addEventListener('input', () => {
-    if (!selected || !selected.classList.contains('two-column-skills')) return;
-    const page = selected.closest('.a4');
-    const pairedText = page ? page.querySelector('[id="skills_names"], [data-id="skills_names"], [id="skills_text"]') : null;
-    if (!pairedText) return;
-    
-    const newGap = parseInt(textColGapSlider.value, 10);
-    const oldGap = parseInt(pairedText.style.getPropertyValue('--two-col-gap')) || 32;
-    pairedText.style.setProperty('--two-col-gap', newGap + 'px');
-    
-    let textWidth = parseFloat(pairedText.style.width) || pairedText.offsetWidth;
-    pairedText.style.width = (textWidth + (newGap - oldGap)) + "px";
-  });
-  textColGapSlider.addEventListener('change', () => pushUndo());
+  textColGapSlider.style.display = 'none';
+  if (textColGapSlider.previousElementSibling) textColGapSlider.previousElementSibling.style.display = 'none';
 }
-
 
 
 
@@ -10083,6 +10126,94 @@ if (fontIncreaseBtn) {
 }
 
 // ==========================================
+// HEADING STYLES ENGINE (Word-style H1, H2, H3, P)
+// ==========================================
+const headingGroup = document.getElementById('headingGroup');
+if (headingGroup) {
+    headingGroup.addEventListener('mousedown', (e) => {
+        // e.preventDefault() prevents the browser from closing the keyboard/losing highlight
+        e.preventDefault(); 
+        const btn = e.target.closest('button[data-heading]');
+        if (!btn) return;
+
+        const type = btn.dataset.heading;
+        let size, weight;
+        
+        // Use 'bold' and 'normal' instead of numbers to force the browser to render it
+        if (type === 'h1') { size = 24; weight = 'bold'; }
+        else if (type === 'h2') { size = 18; weight = 'bold'; }
+        else if (type === 'h3') { size = 14; weight = 'bold'; }
+        else { size = 11; weight = 'normal'; }
+
+        // 1. Safely apply Font Size
+        if (typeof applyFontSizeLogic === 'function') {
+            applyFontSizeLogic(size, false); 
+        }
+
+        // 2. Safely apply Font Weight (Boldness)
+        if (editingText) {
+            let targetRange = null;
+            const sel = window.getSelection();
+            
+            if (sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed && editingText.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+                targetRange = sel.getRangeAt(0);
+            } else if (savedRange && !savedRange.collapsed && editingText.contains(savedRange.commonAncestorContainer)) {
+                targetRange = savedRange;
+            }
+            
+            if (targetRange && typeof wrapSelectedTextWithSpanStyle === 'function') {
+                // Strip inner bold spans inside the highlighted area so they don't override us
+                const walker = editingText.ownerDocument.createTreeWalker(editingText, NodeFilter.SHOW_ELEMENT, null);
+                while (walker.nextNode()){
+                    const el = walker.currentNode;
+                    try {
+                        if (targetRange.intersectsNode(el) && el.style.fontWeight) {
+                            el.style.fontWeight = '';
+                        }
+                    } catch(err) {}
+                }
+                
+                const newRange = wrapSelectedTextWithSpanStyle(editingText, targetRange, { fontWeight: weight });
+                if (newRange) {
+                    savedRange = newRange;
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
+                }
+            } else {
+                // Blinking cursor: Apply to the whole box and strip inner conflicting spans
+                const wrapper = editingText.closest('.text-el');
+                if (wrapper) {
+                    wrapper.style.fontWeight = weight;
+                    editingText.querySelectorAll('*').forEach(el => {
+                        if (el.style) el.style.fontWeight = '';
+                    });
+                }
+            }
+        } else {
+            // Not in edit mode: Apply to the whole box and strip inner conflicting spans
+            if (selectedSet.size > 0) {
+                [...selectedSet].forEach(el => {
+                    if (el.classList.contains('text-el')) {
+                        el.style.fontWeight = weight;
+                        (el.querySelector('.text, .text-content') || el).querySelectorAll('*').forEach(sp => {
+                            if (sp.style) sp.style.fontWeight = '';
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Update the visual font-size number in the toolbar
+        const sizeDisplay = document.getElementById('fontSizeDisplay');
+        if (sizeDisplay) sizeDisplay.textContent = size + 'px';
+        
+        // Push Snapshot to Undo/Redo History
+        if (typeof pushUndo === 'function') pushUndo();
+    });
+}
+
+
+// ==========================================
 // TEXT CASE ENGINE (UPPERCASE, LOWERCASE, TITLE CASE)
 // ==========================================
 const upperCaseBtn = document.getElementById('upperCaseBtn');
@@ -10392,7 +10523,23 @@ function applyListStyle(listNode,type,ensureTag=false,textNode=null){
   }
   if(orderedWanted){ listNode.style.listStyleType=(type==='upper-roman')?'upper-roman':'decimal'; }
   else{ listNode.style.listStyleType=(type==='circle')?'circle':'disc'; }
+  
+  // FIX: Force rock-solid positioning on existing lists when style changes
+  listNode.style.margin = '0.25em 0';
+  listNode.style.padding = '0';
+  listNode.style.listStylePosition = 'inside';
+  
+  // 🚀 DYNAMIC GAP: Use a tight gap for bullets, wide gap for numbers
+  const isUl = listNode.tagName.toLowerCase() === 'ul';
+  const gap = isUl ? '0.7em' : '1.2em';
+  
+  Array.from(listNode.querySelectorAll('li')).forEach(li => {
+      li.style.margin = '0.1em 0';
+      li.style.paddingLeft = gap;
+      li.style.textIndent = `-${gap}`;
+  });
 }
+
 function toList(textNode,type){
   let html=textNode.innerHTML.trim();
   if(!html){
@@ -10402,16 +10549,19 @@ function toList(textNode,type){
   const existing=textNode.querySelector('ul, ol'); if(existing){ applyListStyle(existing,type,true,textNode); return; }
   const lines=splitIntoLinesPreservingBreaks(html); const ordered=(type==='decimal'||type==='upper-roman');
   const list=document.createElement(ordered?'ol':'ul');
-  list.style.margin='0.25em 0 0.25em 1.2em';
-  list.style.padding='0';
-  list.style.listStylePosition='outside';
+      list.style.margin='0.25em 0';
+      list.style.padding='0';
+      list.style.listStylePosition='inside';
 
-  applyListStyle(list,type);
+      applyListStyle(list,type);
 
-  lines.forEach(line=>{
-    const li = document.createElement('li');
+      lines.forEach(line=>{
+        const li = document.createElement('li');
+        li.style.margin = '0.1em 0';
+        li.style.paddingLeft = '1.2em';
+        li.style.textIndent = '-1.2em';
 
-    // Strip leading bullet or simple numbering from the original text,
+        // Strip leading bullet or simple numbering from the original text,
     // because the <li> itself will provide the bullet/number.
     let payload = line || '';
     payload = payload.replace(/^[\u2022•\-\*]\s+/, '');      // bullets like "• " or "- "
@@ -11815,7 +11965,7 @@ function createTextElementFromLayout(spec, text, canvas){
 
     // ✅ FIX: Apply smart line-by-line formatting so mixed blocks (like Work & Education) get perfect bullets!
     if (typeof content === "string" || Array.isArray(content)) {
-        useHtml = true; // Force HTML so we can use smart <div> tags
+        useHtml = true; // Force HTML so we can use smart tags
         
         let lines = [];
         if (Array.isArray(content)) {
@@ -11824,58 +11974,84 @@ function createTextElementFromLayout(spec, text, canvas){
             lines = content.split(/\r?\n|<br>/i).map(s => s.replace(/<(?!u>|\/u>)[^>]*>/g, "").trim());
         }
         
-        content = lines.map(l => {
-            if (!l) return `<div class="normal-line"><br></div>`; 
+        let finalHtml = "";
+        let inList = false;
+
+        lines.forEach(l => {
+            if (!l) {
+                if (inList) { finalHtml += "</ul>"; inList = false; }
+                finalHtml += `<div class="normal-line"><br></div>`; 
+                return;
+            }
             
             // ✅ FIX 2: Detect the secret level code and draw the beautiful CSS dots/bars!
             const dotMatch = l.match(/\[SKILL_DOTS_LEVEL_([0-5])\]/);
             if (dotMatch) {
+                if (inList) { finalHtml += "</ul>"; inList = false; }
                 const lvl = parseInt(dotMatch[1]);
                 let dotsHtml = `<span class="skill-dots" data-level="${lvl}">`;
                 for(let i=1; i<=5; i++) {
                     dotsHtml += `<span class="skill-dot ${i <= lvl ? 'filled' : ''}"></span>`;
                 }
                 dotsHtml += `</span>`;
-                return `<div class="normal-line">${dotsHtml}</div>`;
+                finalHtml += `<div class="normal-line">${dotsHtml}</div>`;
+                return;
             }
             
             const isManualBullet = /^[-•*]\s+/.test(l) || /^•/.test(l);
             
             if (l.includes('<u>')) {
-                return `<div class="normal-line">${l.replace(/^[•\-\*]\s*/, '')}</div>`;
+                if (inList) { finalHtml += "</ul>"; inList = false; }
+                finalHtml += `<div class="normal-line">${l.replace(/^[•\-\*]\s*/, '')}</div>`;
+                return;
             }
+            
             if (wantBullets || isManualBullet) {
                 // Strip starting bullets/dashes and aggressively trim invisible trailing spaces
                 let cleanLine = l.replace(/^[-•*]\s*/, "").trim(); 
                 
                 // ✅ FIX: Detect ||| separator (from app.py grade formatter) OR dash/en-dash/em-dash
-                // ||| is the primary format now; dash variants kept as fallback
                 const gradeMatch = cleanLine.match(/^(.*?)\s*(?:\|\|\||\s*[-–—]\s*)([A-Z][*+\-]?)$/i);
                 
                 if (gradeMatch) {
+                    if (inList) { finalHtml += "</ul>"; inList = false; }
                     const subject = gradeMatch[1].trim();
                     const grade = gradeMatch[2].toUpperCase();
-                    
-                    // Full-width flex row: subject stretches left, grade pins right
                     cleanLine = `<span style="display:flex; width:100%; justify-content:space-between; gap:8px;"><span style="flex:1">${subject}</span><strong style="flex-shrink:0">${grade}</strong></span>`;
-                    
-                    // Return WITHOUT bullet point, with width:100% on the div for proper alignment
-                    return `<div class="normal-line" style="width:100%">${cleanLine}</div>`;
+                    finalHtml += `<div class="normal-line" style="width:100%">${cleanLine}</div>`;
+                    return;
                 }
 
-                return `<div class="bullet-line">• ${cleanLine}</div>`;
+                // 🚀 THE MAGIC: Start a real HTML unordered list if not already in one
+                if (!inList) {
+                    finalHtml += `<ul style="margin: 0.25em 0; padding: 0; list-style-position: inside;">`;
+                    inList = true;
+                }
+                
+                // 🚀 Add the item as a real <li> with a tight, clean bullet gap!
+                finalHtml += `<li style="margin: 0.1em 0; padding-left: 0.7em; text-indent: -0.7em; line-height: inherit;">${cleanLine}</li>`;
             } else {
+                if (inList) { finalHtml += "</ul>"; inList = false; }
+                
                 // Also handle ||| grade separator in normal (non-bullet) lines
                 if (l.includes("|||")) {
                     const parts = l.split("|||");
                     const subject = parts[0].trim();
                     const grade = (parts[1] || "").trim();
                     const gradeHtml = `<span style="display:flex; width:100%; justify-content:space-between; gap:8px;"><span style="flex:1">${subject}</span><strong style="flex-shrink:0">${grade}</strong></span>`;
-                    return `<div class="normal-line" style="width:100%">${gradeHtml}</div>`;
+                    finalHtml += `<div class="normal-line" style="width:100%">${gradeHtml}</div>`;
+                } else {
+                    finalHtml += `<div class="normal-line">${l}</div>`;
                 }
-                return `<div class="normal-line">${l}</div>`;
             }
-        }).join("");
+        });
+        
+        // Close the list if the text block ends on a bullet
+        if (inList) {
+            finalHtml += "</ul>";
+        }
+        
+        content = finalHtml;
     }
 
     if (useHtml){
