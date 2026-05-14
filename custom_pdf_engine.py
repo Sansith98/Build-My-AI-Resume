@@ -1184,8 +1184,8 @@ def _draw_image(c, el, x, y, w, h, opacity, rot):
     if opacity < 1:
         c.setFillAlpha(opacity)
     _apply_rotation(c, cx_pt, cy_pt, rot)
-    # 🚀 FIXED: Removed mask="auto" to preserve true alpha transparency!
-    c.drawImage(img, px, py, pw, ph, preserveAspectRatio=True, anchor='c')
+    # 🚀 RESTORED: Added mask="auto" back to fix black backgrounds on SVGs/PNGs!
+    c.drawImage(img, px, py, pw, ph, preserveAspectRatio=True, anchor='c', mask='auto')
     c.restoreState()
 
 
@@ -1257,8 +1257,8 @@ def _draw_photo(c, el, data, x, y, w, h, sty, opt, opacity, rot):
                 draw_x = px + _w(metrics["x"])
                 draw_y = (py + ph) - _h(metrics["y"]) - draw_h
                 
-                # 🚀 FIXED: Removed mask="auto"
-                c.drawImage(img, draw_x, draw_y, draw_w, draw_h, preserveAspectRatio=False)
+                # 🚀 RESTORED: Added mask="auto"
+                c.drawImage(img, draw_x, draw_y, draw_w, draw_h, preserveAspectRatio=False, mask='auto')
             else:
                 # Fallback to perfect center
                 frame_ratio = pw / ph
@@ -1267,14 +1267,14 @@ def _draw_photo(c, el, data, x, y, w, h, sty, opt, opacity, rot):
                     scale = ph / img_h
                     draw_w = img_w * scale
                     draw_x = px - (draw_w - pw) / 2.0
-                    # 🚀 FIXED: Removed mask="auto"
-                    c.drawImage(img, draw_x, py, draw_w, ph, preserveAspectRatio=False)
+                    # 🚀 RESTORED: Added mask="auto"
+                    c.drawImage(img, draw_x, py, draw_w, ph, preserveAspectRatio=False, mask='auto')
                 else:
                     scale = pw / img_w
                     draw_h = img_h * scale
                     draw_y = py - (draw_h - ph) / 2.0
-                    # 🚀 FIXED: Removed mask="auto"
-                    c.drawImage(img, px, draw_y, pw, draw_h, preserveAspectRatio=False)
+                    # 🚀 RESTORED: Added mask="auto"
+                    c.drawImage(img, px, draw_y, pw, draw_h, preserveAspectRatio=False, mask='auto')
             
         c.restoreState()
 
