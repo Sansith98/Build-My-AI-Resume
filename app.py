@@ -2690,17 +2690,17 @@ def generate_resume():
     # 2. SEPARATE LOGIC MAPPING (0-100 -> 0-4)
     def _map_5_tier(v):
         if v <= 20: return 0
-        if v <= 40: return 1
-        if v <= 60: return 2
-        if v <= 80: return 3
+        if v <= 35: return 1
+        if v < 50: return 2
+        if v <= 80: return 3   # 🚀 Now, hitting exactly 50 jumps into Tier 3 (Inventive)
         return 4
 
     # KEY CHANGE: Two separate tiers
     length_tier = _map_5_tier(detail_val)       # Controls Word Count
     creative_tier = _map_5_tier(creativity_val) # Controls Rules/Hallucinations
 
-    # Verbosity (Number of bullets) still follows Detail Level
-    verbosity = 0 if detail_val < 30 else (1 if detail_val < 70 else 2)
+    # 🚀 Now 50% guarantees maximum bullet generation!
+    verbosity = 0 if detail_val < 30 else (1 if detail_val < 50 else 2)
     tone_crisp = bool(compact.get("tone_crisp"))
 
     # Calculate Temperature based on CREATIVITY slider only
@@ -2752,8 +2752,8 @@ def generate_resume():
 
     def _should_quantify() -> bool:
         jt = f"{job_title} {job_desc}".lower()
-        # FIX: Use 'creativity_val' instead of 'creativity'
-        return creativity_val >= 65 or bool(re.search(r"(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)", jt))
+        # 🚀 Dropped threshold to 50 so moderate creativity still gets impactful numbers!
+        return creativity_val >= 50 or bool(re.search(r"(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)", jt))
 
     def _should_enforce() -> bool:
         # FIX: Use 'creativity_val' instead of 'creativity'
