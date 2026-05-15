@@ -2814,20 +2814,32 @@ def generate_resume():
             w["bullets"] = _work_rw.rewrite(**args)
 
         # Education Rewrite
-        if job_specific:
-            for e in (base_struct.get("education") or []):
-                for k in ("research", "thesis", "details", "notes"):
-                    if isinstance(e.get(k), str) and e.get(k).strip():
-                        e[k] = _edu_rw.rewrite_text(
-                            e[k],
-                            length_tier=length_tier,     # <--- NEW
-                            creative_tier=creative_tier, # <--- NEW
-                            target_role=job_title,
-                            job_description=job_desc,
-                            why_fit=why_fit,
-                            jd_keywords=jd_keywords,
-                            temperature=ai_temp
-                        )
+        for e in (base_struct.get("education") or []):
+            for k in ("research", "thesis", "details", "notes"):
+                val = e.get(k)
+                
+                # 🚀 FIX 1: 'research' is a list. We must convert it to a string for the AI!
+                if isinstance(val, list):
+                    val = "\n".join(str(v) for v in val if v)
+                
+                if isinstance(val, str) and val.strip():
+                    new_val = _edu_rw.rewrite_text(
+                        val,
+                        length_tier=length_tier,
+                        creative_tier=creative_tier,
+                        # 🚀 FIX 2: Only pass job targets if job_specific is true
+                        target_role=job_title if job_specific else "",
+                        job_description=job_desc if job_specific else "",
+                        why_fit=why_fit if job_specific else "",
+                        jd_keywords=jd_keywords if job_specific else [],
+                        temperature=ai_temp
+                    )
+                    
+                    # 🚀 FIX 3: Convert the AI's string response back into a list for the SVG!
+                    if k == "research":
+                        e[k] = _to_str_list(new_val)
+                    else:
+                        e[k] = new_val
 
         # Extras Rewrite
         extras_args = {

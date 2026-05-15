@@ -3592,40 +3592,53 @@ if (dotTwoColumnToggle) {
   });
 }
 
-// Unified Slider: Controls BOTH Text and Dots simultaneously!
+// 🟢 Decoupled Slider 1: Controls ONLY the Dots Box Gap
 if (dotColGapSlider) {
-  // Rename label so it makes sense in the UI
   const label = dotColGapSlider.previousElementSibling;
-  if (label) label.textContent = "Column Gap (Syncs Text & Dots)";
+  if (label) label.textContent = "Dots Column Gap"; // Fix the label
 
   dotColGapSlider.addEventListener('input', () => {
     if (!selected || !selected.classList.contains('two-column-skills')) return;
-    const page = selected.closest('.a4');
-    const pairedText = page ? page.querySelector('[id="skills_names"], [data-id="skills_names"], [id="skills_text"]') : null;
     
     const newGap = parseInt(dotColGapSlider.value, 10);
     const oldGap = parseInt(selected.style.getPropertyValue('--two-col-gap')) || 32;
     
-    // 1. Update the Dots Box
     selected.style.setProperty('--two-col-gap', newGap + 'px');
+    selected.setAttribute('data-col-gap-x', newGap); // Saves for Python PDF export
+    
     let dotsWidth = parseFloat(selected.style.width) || selected.offsetWidth;
     selected.style.width = (dotsWidth + (newGap - oldGap)) + "px";
-
-    // 2. Lock the Text Box to match EXACTLY
-    if (pairedText) {
-        pairedText.style.setProperty('--two-col-gap', newGap + 'px');
-        pairedText.style.width = selected.style.width; // Force exact width match
-    }
 
     if (typeof updateSizeRotationInputsFromSelection === 'function') updateSizeRotationInputsFromSelection();
   });
   dotColGapSlider.addEventListener('change', () => pushUndo());
 }
 
-// Hide the redundant Text Gap slider completely
+// 🟢 Decoupled Slider 2: Controls ONLY the Text Box Gap
 if (textColGapSlider) {
-  textColGapSlider.style.display = 'none';
-  if (textColGapSlider.previousElementSibling) textColGapSlider.previousElementSibling.style.display = 'none';
+  // 1. Stop hiding the slider in the UI!
+  textColGapSlider.style.display = 'block';
+  if (textColGapSlider.previousElementSibling) textColGapSlider.previousElementSibling.style.display = 'block';
+
+  textColGapSlider.addEventListener('input', () => {
+    if (!selected || !selected.classList.contains('two-column-skills')) return;
+    const page = selected.closest('.a4');
+    const pairedText = page ? page.querySelector('[id="skills_names"], [data-id="skills_names"], [id="skills_text"]') : null;
+    
+    if (pairedText) {
+        const newGap = parseInt(textColGapSlider.value, 10);
+        const oldGap = parseInt(pairedText.style.getPropertyValue('--two-col-gap')) || 32;
+        
+        pairedText.style.setProperty('--two-col-gap', newGap + 'px');
+        pairedText.setAttribute('data-col-gap-x', newGap); // Saves for Python PDF export
+        
+        let textWidth = parseFloat(pairedText.style.width) || pairedText.offsetWidth;
+        pairedText.style.width = (textWidth + (newGap - oldGap)) + "px";
+    }
+
+    if (typeof updateSizeRotationInputsFromSelection === 'function') updateSizeRotationInputsFromSelection();
+  });
+  textColGapSlider.addEventListener('change', () => pushUndo());
 }
 
 
