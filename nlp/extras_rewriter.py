@@ -73,6 +73,7 @@ def _system_prompt(creative_tier: int) -> str:
         "Pattern to follow: '[Name of Activity]: [1 brief professional sentence].'\n"
         "Example 1: 'University Esports Team' -> 'Competitive Esports Player: Coordinated team strategies and analyzed fast-paced gameplay.'\n"
         "Example 2: 'Karting Club' -> 'Karting Club Member: Cultivated focus and quick decision-making in high-pressure racing environments.'\n"
+        "CRITICAL: NEVER remove, summarize, or alter specific award names, honors, degrees, or parentheticals (e.g., '(Honours)'). You must preserve them exactly as provided.\n"
         + formatting
     )
 

@@ -199,6 +199,8 @@ class WorkBulletRewriter:
             usr_msg = _user_prompt(
                 bullets, 
                 length_tier, # Pass length constraints here
+                domain,      # <--- FIXED: Added missing domain
+                verbs,       # <--- FIXED: Added missing verbs
                 target_role, job_description, why_fit, jd_keywords
             )
 

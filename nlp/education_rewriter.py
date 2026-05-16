@@ -30,8 +30,9 @@ def _system_prompt(creative_tier: int) -> str:
         return (
             "Rewrite EDUCATION details into professional, job-relevant wording.\n"
             "CREATIVE RULES:\n"
+            "- Convert raw project notes into strong, active-voice professional statements (e.g., use verbs like 'Developed', 'Designed', 'Engineered').\n"
             "- Highlight relevant coursework that matches the Target Job.\n"
-            "- Smooth out the text to sound more professional and academic.\n"
+            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific hardware/software. You must preserve them exactly.\n"
             "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
@@ -40,7 +41,7 @@ def _system_prompt(creative_tier: int) -> str:
             "INVENTIVE RULES:\n"
             "- You MUST expand brief project notes into deep, detailed bullet points.\n"
             "- Elaborate heavily on the significance, technical tools used, and outcomes of the research/thesis/projects.\n"
-            "- You may assume standard coursework for this degree if not listed to better align with the target job.\n"
+            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific hardware/software (e.g., PH Sensors, TDS Sensors). You must preserve them exactly.\n"
             "- Output JSON strictly in this format: {\"text\": \"your expanded text\"}"
         )
 
