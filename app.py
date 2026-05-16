@@ -2683,84 +2683,78 @@ def generate_resume():
         print("🕵️ Turnstile API Error:", e)
         return jsonify(ok=False, error="SECURITY_FAILED", message="Security servers are currently down. Please try again later."), 503
 
-    # 1. READ INPUTS
-    creativity_val = int(compact.get("creativity") or 50)  # 0..100 (Truth/Creativity)
-    detail_val     = int(compact.get("detailLevel") or 50) # 0..100 (Length/Detail)
-
-    # 2. SEPARATE LOGIC MAPPING (0-100 -> 0-4)
-    def _map_5_tier(v):
-        if v <= 20: return 0
-        if v <= 35: return 1
-        if v < 50: return 2
-        if v <= 80: return 3   # 🚀 Now, hitting exactly 50 jumps into Tier 3 (Inventive)
-        return 4
-
-    # KEY CHANGE: Two separate tiers
-    length_tier = _map_5_tier(detail_val)       # Controls Word Count
-    creative_tier = _map_5_tier(creativity_val) # Controls Rules/Hallucinations
-
-    # 🚀 Now 50% guarantees maximum bullet generation!
-    verbosity = 0 if detail_val < 30 else (1 if detail_val < 50 else 2)
-    tone_crisp = bool(compact.get("tone_crisp"))
-
-    # Calculate Temperature based on CREATIVITY slider only
-# ✅ INCREASE RANGE: 0% = 0.2 (Cold/Strict), 100% = 1.2 (Creative/Hot)
-    ai_temp = 0.2 + (creativity_val / 100.0) * 1.0
-
-    # Front-end toggles (safe defaults)
+    # 1. FRONT-END TOGGLES & CONTEXT
     content_mode = (compact.get("contentMode") or compact.get("content_mode") or "ai").strip().lower()
     resume_target = (compact.get("resumeTarget") or compact.get("resume_target") or "general").strip().lower()
+    ai_mode = (compact.get("aiMode") or compact.get("ai_mode") or "").strip().lower()
+    
     ai_enabled = content_mode in ("ai", "enhanced", "ai_enhanced", "ai-enhanced", "aienhanced")
     job_specific = resume_target in ("job", "job_specific", "job-specific", "specific")
 
-
     job_title = (compact.get("jobTitle") or "").strip()
     job_desc  = (compact.get("jobDescription") or "").strip()
+    why_fit   = (compact.get("whyFit") or compact.get("why_fit") or "").strip() if (ai_enabled and job_specific) else ""
+    jt = f"{job_title} {job_desc}".lower()
 
-    # whyFit can come as whyFit (frontend) or why_fit (older JSON)
-    why_fit = (compact.get("whyFit") or compact.get("why_fit") or "").strip()
-
-    if ai_enabled and job_specific:
-        why_fit = (compact.get("whyFit") or compact.get("why_fit") or "").strip()
-
-    why_fit   = (compact.get("whyFit") or "") if (ai_enabled and job_specific) else ""
-
-    # Lightweight keyword extraction for job-specific targeting only
-    _STOP = {
-        "the","and","for","with","to","of","in","on","a","an","at","is","are","as","or","be",
-        "this","that","these","those","we","you","your","our","will","would","should","can","may",
-        "responsibilities","responsibility","requirements","required","preferred","include","including",
-        "ability","skills","experience","knowledge","strong","basic","solid","plus","work","working"
-    }
-    _kw_tokens = re.findall(r"[a-zA-Z][a-zA-Z0-9+/#-]{2,}", f"{job_title} {job_desc}".lower())
+    # Keyword extraction
+    _STOP = {"the","and","for","with","to","of","in","on","a","an","at","is","are","as","or","be",
+             "this","that","these","those","we","you","your","our","will","would","should","can","may",
+             "responsibilities","responsibility","requirements","required","preferred","include","including",
+             "ability","skills","experience","knowledge","strong","basic","solid","plus","work","working"}
+    _kw_tokens = re.findall(r"[a-zA-Z][a-zA-Z0-9+/#-]{2,}", jt)
     jd_keywords = []
     for t in _kw_tokens:
-        if t in _STOP:
-            continue
-        if t not in jd_keywords:
+        if t not in _STOP and t not in jd_keywords:
             jd_keywords.append(t)
-        if len(jd_keywords) >= 14:
-            break
-
-
-
+        if len(jd_keywords) >= 14: break
 
     base_skills_text = compact.get("skills") or ""
     skills_len = len(_skills_from_csv(base_skills_text))
+    tone_crisp = bool(compact.get("tone_crisp"))
 
-# ... inside generate_resume ...
+    # 2. THE NEW DISCRETE AI MODES
+    if ai_mode == "strict":
+        length_tier   = 1
+        creative_tier = 1
+        ai_temp       = 0.2
+        tone_quant    = False
+        verbosity     = 0
+        creativity_val= 20 # for _should_enforce
+        
+    elif ai_mode == "expansive":
+        length_tier   = 3
+        creative_tier = 4
+        ai_temp       = 0.85
+        tone_quant    = True
+        verbosity     = 2
+        creativity_val= 90 # for _should_enforce
+        
+    elif ai_mode == "balanced":
+        length_tier   = 2
+        creative_tier = 3
+        ai_temp       = 0.7
+        tone_quant    = True
+        verbosity     = 1
+        creativity_val= 50 # for _should_enforce
+        
+    else:
+        # 🛡️ LEGACY FALLBACK (For older saved JSON layouts)
+        creativity_val = int(compact.get("creativity") or 50)  
+        detail_val     = int(compact.get("detailLevel") or 50) 
+        def _map_5_tier(v):
+            if v <= 20: return 0
+            if v <= 35: return 1
+            if v < 50: return 2
+            if v <= 80: return 3
+            return 4
 
-    def _should_quantify() -> bool:
-        jt = f"{job_title} {job_desc}".lower()
-        # 🚀 Dropped threshold to 50 so moderate creativity still gets impactful numbers!
-        return creativity_val >= 50 or bool(re.search(r"(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)", jt))
+        length_tier = _map_5_tier(detail_val)
+        creative_tier = _map_5_tier(creativity_val)
+        ai_temp = 0.2 + (creativity_val / 100.0) * 0.65
+        verbosity = 0 if detail_val < 30 else (1 if detail_val < 50 else 2)
+        tone_quant = creativity_val >= 50 or bool(re.search(r"(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)", jt))
 
-    def _should_enforce() -> bool:
-        # FIX: Use 'creativity_val' instead of 'creativity'
-        return bool(job_title.strip()) or skills_len > 12 or creativity_val >= 60
-
-    tone_quant  = _should_quantify()
-    enforce     = _should_enforce()
+    enforce = bool(job_title.strip()) or skills_len > 12 or creativity_val >= 60
 
     base_struct = _structure_from_form(data)
     base_struct["work"] = _normalize_work(base_struct.get("work"))

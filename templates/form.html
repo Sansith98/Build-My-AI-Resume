@@ -1037,32 +1037,27 @@
       </div>
     </div>
 
-    <div class="form-section" style="flex: 1 1 30%; min-width: 250px;">
-      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">2. Content Depth</h3>
+    <div class="form-section" style="flex: 1 1 60%; min-width: 250px;">
+      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">2. AI Enhancement Engine</h3>
+      
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <label style="flex: 1; min-width: 150px; border: 1px solid var(--line); padding: 16px; border-radius: 10px; cursor: pointer; background: var(--card); transition: all 0.2s;">
+              <input type="radio" name="aiMode" value="strict" style="margin-bottom: 10px;">
+              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Fix & Polish</div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Strictly fixes grammar and formatting. Keeps your exact words.</div>
+          </label>
 
-      <label for="detailLevel" style="margin-top: 5px;">Detail Level <span id="detailBadge" class="badge">Standard (50)</span></label>
-      <input type="range" id="detailLevel" min="0" max="100" step="1" value="50" style="margin-bottom: 8px;"/>
-      <div class="cre-labels"><span>Brief</span><span>Standard</span><span>Comprehensive</span></div>
-      <p class="muted" style="margin-bottom: 25px; font-size: 0.85rem;">Adjusts paragraph length and bullet point count.</p>
+          <label style="flex: 1; min-width: 150px; border: 2px solid var(--brand); padding: 15px; border-radius: 10px; cursor: pointer; background: var(--card); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);">
+              <input type="radio" name="aiMode" value="balanced" checked style="margin-bottom: 10px;">
+              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--brand);">Professional Upgrade</div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Upgrades vocabulary, adds metrics, and creates an executive tone.</div>
+          </label>
 
-      <label class="toggle" title="Shorter, tighter sentences">
-        <input type="checkbox" id="tone_crisp" class="visually-hidden" checked>
-        <span class="switch" aria-hidden="true"></span>
-        <span class="label">Use concise phrasing</span>
-      </label>
-    </div>
-
-    <div class="form-section" style="flex: 1 1 30%; min-width: 250px;">
-      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">3. AI Rewrite Strength</h3>
-
-      <label for="creativity" style="margin-top: 5px;">Rewrite Strength <span id="creativityBadge" class="badge">Balanced (50)</span></label>
-      <input type="range" id="creativity" min="0" max="100" step="1" value="50" style="margin-bottom: 8px;"/>
-      <div class="cre-labels"><span>Strict</span><span>Balanced</span><span>Creative</span></div>
-      <p class="muted" style="margin-bottom: 20px; font-size: 0.85rem;">Controls how much the AI alters your original phrasing.</p>
-
-      <div style="background: #eef2ff; color: #1e40af; padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; line-height: 1.5; border: 1px solid #c7d2fe;">
-        <strong style="display:block; margin-bottom:2px;">Expected AI Output:</strong>
-        <span id="derivedHint"></span>
+          <label style="flex: 1; min-width: 150px; border: 1px solid var(--line); padding: 16px; border-radius: 10px; cursor: pointer; background: var(--card); transition: all 0.2s;">
+              <input type="radio" name="aiMode" value="expansive" style="margin-bottom: 10px;">
+              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Maximum Expansion</div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Expands brief notes into deep, detailed bullet points.</div>
+          </label>
       </div>
     </div>
 
@@ -1864,11 +1859,10 @@ function collectSkills(){
 function collectForm(){
   const getVals = (sel)=> Array.from(document.querySelectorAll(sel)).map(e=>e.value || "");
 
-  const style = Number(document.getElementById('creativity').value);
-  const derivedVerbosity = verbosityFromStyle(style);
   const jobTitle = $('#jobTitle').value;
   const jobDescription = $('#jobDescription').value;
   const whyFit = document.getElementById('whyFit') ? document.getElementById('whyFit').value : "";
+  const aiMode = document.querySelector('input[name="aiMode"]:checked')?.value || "balanced";
 
   // radio states (original|ai) and (general|job)
   const contentMode = document.querySelector('input[name="contentMode"]:checked')?.value || "original";
@@ -1884,11 +1878,7 @@ function collectForm(){
 
   const d = {
     cfToken: document.querySelector('[name="cf-turnstile-response"]')?.value || "",
-    creativity: style,     // This is the randomness
-    detailLevel: Number(document.getElementById('detailLevel').value), // This is the length
-    verbosity:  derivedVerbosity,
-    tone_crisp: $('#tone_crisp').checked,
-    tone_quantify: tone_quantify,
+    aiMode: aiMode,
     relevance_strict: enforce_relevance,
     enforce_relevance: enforce_relevance,
 
@@ -2482,12 +2472,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   
   // 🚀 FIX: Added Certifications to the auto-seed list!
   if ($$('#certList .cert-row').length === 0) addCertRow();
-
-  // Derived hint from slider
-  document.getElementById('creativity').addEventListener('input', updateDerivedHint);
-  document.getElementById('detailLevel').addEventListener('input', updateDerivedHint);
-  updateDerivedHint();
-  checkGenerateReadiness(); // 🚀 ADDED HERE
+  checkGenerateReadiness(); 
 
   // --- ELEGANT TOAST NOTIFICATION ENGINE ---
   function showErrorToast(title, message) {
