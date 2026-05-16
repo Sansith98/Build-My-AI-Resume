@@ -516,7 +516,7 @@ def generate_pdf_from_layout(layout: dict, data: dict, output_path: str):
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 13. ELEMENT DISPATCHER
-#     FIX 1a: uses _dim() for robust width/height extraction.
+#    FIX 1a: uses _dim() for robust width/height extraction.
 # ═══════════════════════════════════════════════════════════════════════════
 def _draw_element(c, el: dict, data: dict, id_map: dict):
     t       = el.get("type", "text")
@@ -528,6 +528,58 @@ def _draw_element(c, el: dict, data: dict, id_map: dict):
     opt     = el.get("options", {})
     rot     = float(el.get("rotation", 0))
     opacity = float(sty.get("opacity", 1))
+
+    # ---------------------------------------------------------------------
+    # 🚀 FIX: BULLETPROOF HIDE-IF-EMPTY LOGIC
+    # ---------------------------------------------------------------------
+    hide_if_empty = opt.get("hideIfEmpty")
+    if hide_if_empty and isinstance(hide_if_empty, str) and hide_if_empty.strip():
+        
+        def _is_empty(v):
+            if v is None: return True
+            if isinstance(v, str):
+                import re
+                # Strip HTML tags, &nbsp;, and stray structural/bullet characters
+                clean = re.sub(r'<[^>]+>', '', str(v)).replace('&nbsp;', ' ')
+                clean = clean.replace('•', '').replace('-', '').replace('—', '').replace('|', '').strip()
+                return clean == ''
+            if isinstance(v, (list, tuple)):
+                return all(_is_empty(i) for i in v)
+            if isinstance(v, dict):
+                # A dictionary is empty if ALL of its actual text/list content is empty.
+                # We ignore integers/booleans (like "level": 3) as they are structural defaults.
+                for val in v.values():
+                    if isinstance(val, (str, list, tuple, dict)):
+                        if not _is_empty(val):
+                            return False
+                return True
+            # Ignore purely numeric/boolean structural fields
+            return True
+
+        def _get_val(path_str):
+            # Supports JS-style fallback paths: "skillsText|skills"
+            for path in path_str.split('|'):
+                cur = data
+                valid = True
+                for p in path.strip().split('.'):
+                    if isinstance(cur, dict):
+                        cur = cur.get(p)
+                    else:
+                        valid = False
+                        break
+                # If we found valid data that isn't empty, return it immediately
+                if valid and not _is_empty(cur):
+                    return cur
+            return None
+
+        # Check both the raw linked name and the array variant (e.g. skillsText vs skills)
+        val_text = _get_val(hide_if_empty)
+        val_arr = _get_val(hide_if_empty.replace("Text", ""))
+        
+        # If both attempts to find data turn up completely empty, abort drawing!
+        if _is_empty(val_text) and _is_empty(val_arr):
+            return  # 🦋 Drop the pen. Do not draw this title or its background!
+    # ---------------------------------------------------------------------
 
     if   t == "shape":  _draw_shape(c, x, y, w, h, sty, opt, opacity, rot, id_map, el)
     elif t == "text":   _draw_text(c, el, data, x, y, w, h, sty, opt, opacity, rot)

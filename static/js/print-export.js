@@ -553,22 +553,56 @@ async function captureCurrentLayout() {
             // ── TEXT ──────────────────────────────────────────────────
             if (type === 'text') {
                 elData.options.staticText = el.innerText.trim();
+                
+                // Pass hideIfEmpty so the PDF engine can skip drawing empty title boxes
+                if (el.dataset.hideIfEmpty !== undefined && el.dataset.hideIfEmpty !== '') {
+                    elData.options.hideIfEmpty = el.dataset.hideIfEmpty;
+                }
 
                 const innerEl = el.querySelector('.text-content, .text, .ql-editor') || el;
                 const ics = window.getComputedStyle(innerEl);
 
-                elData.style.backgroundColor = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : ics.backgroundColor;
+                // 🚀 LOCAL HELPER: Convert RGB to Hex so the Python PDF Engine doesn't crash!
+                const rgbToHex = (rgb) => {
+                    if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return "transparent";
+                    const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+                    if (!match) return rgb;
+                    return `#${parseInt(match[1]).toString(16).padStart(2, '0')}${parseInt(match[2]).toString(16).padStart(2, '0')}${parseInt(match[3]).toString(16).padStart(2, '0')}`;
+                };
+
+                // 3. Typography Styles (Crucial for PDF Engine)
+                elData.style.fontFamily = ics.fontFamily.replace(/"/g, '');
+                elData.style.fontSize = parseFloat(ics.fontSize);
+                elData.style.fontWeight = ics.fontWeight === 'bold' ? 700 : (parseInt(ics.fontWeight) || 400);
+                elData.style.fontStyle = ics.fontStyle === 'italic' ? 'italic' : 'normal';
+                elData.style.textDecoration = ics.textDecoration.includes('underline') ? 'underline' : 'none';
+                elData.style.color = rgbToHex(ics.color);
+                elData.style.align = ics.textAlign;
+                if (ics.lineHeight !== "normal") {
+                    elData.style.lineHeight = Math.round((parseFloat(ics.lineHeight) / elData.style.fontSize) * 10) / 10;
+                }
+
+                // 4. Background Color
+                const bgCol = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? cs.backgroundColor : ics.backgroundColor;
+                if (bgCol && bgCol !== 'rgba(0, 0, 0, 0)' && bgCol !== 'transparent') {
+                    elData.style.backgroundColor = rgbToHex(bgCol);
+                }
                 
+                // 5. Border Radius (with % conversion)
                 const brStr = cs.borderRadius !== "0px" ? cs.borderRadius : ics.borderRadius || "0";
                 let br = parseFloat(brStr) || 0;
                 if (brStr.includes('%')) br = (br / 100) * Math.min(w, h);
-                elData.style.borderRadius = br;
+                if (br > 0) {
+                    elData.style.borderRadius = br;
+                    elData.style.overflow = "hidden";
+                }
 
+                // 6. Title Line Extraction
                 const autoTitleLine = el.querySelector('.auto-title-line');
                 if (autoTitleLine) {
                     const atcs = window.getComputedStyle(autoTitleLine);
                     elData.options.titleLine = {
-                        color: atcs.backgroundColor,
+                        color: rgbToHex(atcs.backgroundColor), // 🚀 Safely converted to Hex!
                         height: parseFloat(atcs.height) || 2,
                         width: autoTitleLine.offsetWidth || w,
                         offset: parseFloat(atcs.bottom) || 0

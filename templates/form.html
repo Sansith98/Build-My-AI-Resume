@@ -269,6 +269,33 @@
   .content-mode-option input:checked + span{
     font-weight: 600;
   }
+
+  /* ===== AI Engine Cards (Moving Selection & Disabled State) ===== */
+  .ai-mode-card {
+      flex: 1; 
+      min-width: 150px; 
+      border: 1px solid var(--line); 
+      padding: 15px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      background: var(--card); 
+      transition: all 0.2s ease-in-out;
+  }
+  .ai-mode-card.active {
+      border: 2px solid var(--brand);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  }
+  [data-theme="dark"] .ai-mode-card.active {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2) !important;
+  }
+  .ai-engine-disabled {
+      opacity: 0.45;
+      filter: grayscale(1);
+      pointer-events: none;
+  }
+
+  
   /* ===== Disabled Job Target (Only enabled for AI Enhanced + Job-specific) ===== */
   /* ===== Disabled Job Target ===== */
   .job-target-disabled{
@@ -1037,25 +1064,25 @@
       </div>
     </div>
 
-    <div class="form-section" style="flex: 1 1 60%; min-width: 250px;">
+    <div class="form-section" id="ai-engine-wrapper" style="flex: 1 1 60%; min-width: 250px; transition: all 0.3s;">
       <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">2. AI Enhancement Engine</h3>
       
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <label style="flex: 1; min-width: 150px; border: 1px solid var(--line); padding: 16px; border-radius: 10px; cursor: pointer; background: var(--card); transition: all 0.2s;">
+          <label class="ai-mode-card">
               <input type="radio" name="aiMode" value="strict" style="margin-bottom: 10px;">
-              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Fix & Polish</div>
+              <div class="mode-title" style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Fix & Polish</div>
               <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Strictly fixes grammar and formatting. Keeps your exact words.</div>
           </label>
 
-          <label style="flex: 1; min-width: 150px; border: 2px solid var(--brand); padding: 15px; border-radius: 10px; cursor: pointer; background: var(--card); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);">
+          <label class="ai-mode-card active">
               <input type="radio" name="aiMode" value="balanced" checked style="margin-bottom: 10px;">
-              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--brand);">Professional Upgrade</div>
+              <div class="mode-title" style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--brand);">Professional Upgrade</div>
               <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Upgrades vocabulary, adds metrics, and creates an executive tone.</div>
           </label>
 
-          <label style="flex: 1; min-width: 150px; border: 1px solid var(--line); padding: 16px; border-radius: 10px; cursor: pointer; background: var(--card); transition: all 0.2s;">
+          <label class="ai-mode-card">
               <input type="radio" name="aiMode" value="expansive" style="margin-bottom: 10px;">
-              <div style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Maximum Expansion</div>
+              <div class="mode-title" style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Maximum Expansion</div>
               <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Expands brief notes into deep, detailed bullet points.</div>
           </label>
       </div>
@@ -2660,9 +2687,8 @@ function updateJobTargetUI(){
 
   // Controls we need to disable/enable
   const targetRadios = document.querySelectorAll('input[name="resumeTarget"]');
-  const creativity   = document.getElementById('creativity');
-  const toneCrisp    = document.getElementById('tone_crisp');
-
+  const aiEngineWrapper = document.getElementById('ai-engine-wrapper');
+  const aiModeRadios = document.querySelectorAll('input[name="aiMode"]');
   // Job section fields
   const jobRow = document.getElementById('job-target-row');
   if (!jobRow) return;
@@ -2687,8 +2713,8 @@ function updateJobTargetUI(){
   if (contentMode === 'original') {
     // -------- 1) ORIGINAL MODE --------
     targetRadios.forEach(r => r.disabled = true);
-    if (creativity) creativity.disabled = true;
-    if (toneCrisp) toneCrisp.disabled = true;
+    if (aiEngineWrapper) aiEngineWrapper.classList.add('ai-engine-disabled');
+    aiModeRadios.forEach(r => r.disabled = true);
 
     if (h2) h2.innerHTML = "Professional Summary";
     if (wfLabel) wfLabel.innerHTML = `Summary / Objective <span class="chip">required</span>`;
@@ -2700,8 +2726,8 @@ function updateJobTargetUI(){
   } else {
     // -------- 2) AI ENHANCED MODE --------
     targetRadios.forEach(r => r.disabled = false);
-    if (creativity) creativity.disabled = false;
-    if (toneCrisp) toneCrisp.disabled = false;
+    if (aiEngineWrapper) aiEngineWrapper.classList.remove('ai-engine-disabled');
+    aiModeRadios.forEach(r => r.disabled = false);
 
     if (resumeTarget === 'job') {
         // A) JOB-SPECIFIC
@@ -3598,7 +3624,25 @@ async function previewInTemplate(){
     closeWait();
   }
 }
-
+// Moves the Blue Active State on AI Modes
+document.querySelectorAll('input[name="aiMode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Remove active class and blue text from all cards
+        document.querySelectorAll('.ai-mode-card').forEach(card => {
+            card.classList.remove('active');
+            const title = card.querySelector('.mode-title');
+            if (title) title.style.color = 'var(--ink)';
+        });
+        
+        // Add active class and blue text to the selected card
+        const activeCard = this.closest('.ai-mode-card');
+        if (activeCard) {
+            activeCard.classList.add('active');
+            const title = activeCard.querySelector('.mode-title');
+            if (title) title.style.color = 'var(--brand)';
+        }
+    });
+});
 
 </script>
 
