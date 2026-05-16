@@ -153,10 +153,10 @@ def login():
 # =============================================================================
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 _DISABLE_OPENAI = os.getenv("DISABLE_OPENAI", "").strip().lower() in ("1", "true", "yes")
-_profile_rw  = ProfileRewriter(api_key="", model="")
-_work_rw     = WorkBulletRewriter(api_key="", model="")
-_extras_rw   = ExtrasRewriter(api_key="", model="")
-_edu_rw      = EducationRewriter(api_key="", model="")
+_profile_rw  = ProfileRewriter()
+_work_rw     = WorkBulletRewriter()
+_extras_rw   = ExtrasRewriter()
+_edu_rw      = EducationRewriter()
 
 
 

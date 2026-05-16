@@ -35,9 +35,8 @@ def _truncate_words(t: str, max_words: int) -> str:
 
 # 1. CONTROLS LENGTH (Detail Slider)
 def _tier_targets(length_tier: int) -> Tuple[int, int]:
-    # (max_sentences, max_words)
-    if length_tier == 0: return (1, 10)    # ✅ ULTRA CONCISE
-    if length_tier == 1: return (2, 30) 
+    if length_tier == 0: return (1, 15)
+    if length_tier == 1: return (2, 25) 
     if length_tier == 2: return (3, 60) 
     if length_tier == 3: return (5, 100) 
     return (8, 180)                        # ✅ MASSIVE DETAIL                      # ✅ MASSIVE DETAIL                     # Very Long
@@ -65,8 +64,9 @@ def _guess_domain(title: str, company: str = "", bullets: List[str] = None) -> s
     return "generic"
 
 # 2. CONTROLS TRUTH (Creativity Slider)
+# 2. CONTROLS TRUTH (Creativity Slider)
 def _system_prompt(creative_tier: int) -> str:
-    # Base Instructions (Always Active)
+    # Base Instructions (Always Active - Now includes the Number Ban!)
     base = (
         "You are an expert resume bullet editor. Rewrite each bullet FULLY with new wording.\n"
         "STYLE GUIDELINES:\n"
@@ -74,31 +74,33 @@ def _system_prompt(creative_tier: int) -> str:
         "- Do NOT start with weak phrases like 'Assisted', 'Responsible for', 'Tasked with', or 'Helped'.\n"
         "- Avoid stacking verbs (e.g., avoid 'Planned drove'; use 'Planned and drove').\n"
         "- Use professional, global English. No buzzword spam.\n"
+        "GLOBAL SAFETY RULE:\n"
+        "- **NO FAKE NUMBERS:** You are strictly forbidden from inventing metrics, percentages, or financial figures. If the user did not provide a number, focus entirely on the qualitative scope and operational impact.\n"
     )
 
     # Dynamic Rules based on Creativity Slider
     if creative_tier <= 1:
         return base + (
-            "CRITICAL SAFETY RULES:\n"
-            "1. **STRICT TRUTH:** Do NOT invent tools, numbers, or outcomes. Use ONLY what is provided.\n"
+            "CRITICAL RULES:\n"
+            "1. **STRICT TRUTH:** Do NOT invent tools or outcomes. Use ONLY what is provided.\n"
             "2. **NO HALLUCINATIONS:** If the input says 'Fixed bug', do NOT add 'using React' unless specified.\n"
-            "Output JSON only: {\"bullets\": [ ... ]}."
+            "Output JSON strictly in this format: {\"bullets\": [ \"bullet 1\", \"bullet 2\" ]}."
         )
     elif creative_tier <= 3:
         return base + (
             "CREATIVE RULES:\n"
-            "1. **INFER CONTEXT:** If the job description mentions specific tools (e.g. Jira, AWS) and the user has a matching generic role, you may imply familiarity.\n"
-            "2. **ELABORATE:** You may expand on the 'Why' and 'Result' to create a stronger bullet.\n"
-            "Output JSON only: {\"bullets\": [ ... ]}."
+            "1. **INFER CONTEXT:** If the job description mentions specific tools and the user has a matching role, you may imply familiarity.\n"
+            "2. **ELABORATE:** Expand on the 'Why' and the qualitative 'Result' to create a stronger bullet.\n"
+            "Output JSON strictly in this format: {\"bullets\": [ \"bullet 1\", \"bullet 2\" ]}."
         )
     else:
-        # INVENTIVE RULES (NO LIMITS)
+        # INVENTIVE RULES (EXPANSION WITHOUT HALLUCINATION)
         return base + (
-            "MISSION: You are a professional ghostwriter. "
-            "KEEP THE USER'S FACTS, but you are EXPECTED to expand these bullets significantly. "
-            "If the user didn't provide results, you MUST assume likely metrics "
-            "(e.g., 'improving efficiency by 15%') to build the strongest possible bullet. "
-            "Transform brief notes into powerful, detailed professional statements."
+            "MISSION: You are a high-end executive resume strategist. "
+            "You MUST expand these brief notes into powerful, detailed professional statements.\n"
+            "INVENTIVE RULES:\n"
+            "1. **ELABORATE ON IMPACT:** Deeply explain the 'Why' and the 'How' of the task. Describe the methodology, the tools used, and the qualitative business value of the work.\n"
+            "Output JSON strictly in this format: {\"bullets\": [ \"bullet 1\", \"bullet 2\" ]}."
         )
 def _user_prompt(bullets: List[str], tier: int, domain: str, verbs: List[str], target_role: str, job_description: str, why_fit: str, jd_keywords: Optional[List[str]]) -> str:
     max_sents, cap = _tier_targets(tier)
@@ -230,9 +232,15 @@ class WorkBulletRewriter:
             outs = proofread_bullets(outs)
             
             # Post-process repeated verbs
+            seen_openers = {outs[0].split()[0].lower()} if outs else set()
             for i in range(1, len(outs)):
-                if outs[i].split()[:1] == outs[i-1].split()[:1]:
-                    outs[i] = re.sub(r"^\w+", verbs[(i+1) % len(verbs)].title(), outs[i], count=1)
+                opener = outs[i].split()[0].lower() if outs[i].split() else ""
+                if opener in seen_openers:
+                    replacement = next((v for v in verbs if v.lower() not in seen_openers), verbs[(i+1) % len(verbs)])
+                    outs[i] = re.sub(r"^\w+", replacement.title(), outs[i], count=1)
+                
+                if outs[i].split():
+                    seen_openers.add(outs[i].split()[0].lower())
             
             return outs
 

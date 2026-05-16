@@ -68,7 +68,10 @@ def _user_prompt(text: str, tier: int, target_role: str, job_description: str, w
     }, ensure_ascii=False)
 
 def _cleanup(txt: str) -> str:
-    txt = re.sub(r"\s{2,}", " ", (txt or "").strip())
+    # Preserve intentional newlines (multi-bullet education output)
+    # Only collapse spaces, not newlines
+    txt = re.sub(r"[^\S\n]+", " ", (txt or "").strip())
+    txt = re.sub(r"\n{3,}", "\n\n", txt)  # max double newline
     txt = re.sub(r"[.]{2,}$", ".", txt)
     if txt and not re.search(r"[.!?]$", txt):
         txt += "."
