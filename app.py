@@ -1199,9 +1199,9 @@ def _call_openai_sections(ai_payload: Dict[str, Any], tier: int = 1, verbosity: 
             "You are a high-end resume strategist. "
             "MISSION: Transform this resume into a top-tier document for the target role. "
             "CREATIVE FREEDOM: Use the user's provided data as the absolute foundation. Do NOT delete core facts. "
-            "If the input is thin, you MUST expand the narrative and fill in gaps with impressive, "
-            "industry-standard achievements and results that fit the candidate's level. "
-            "Maximize impact. Use Inventive language."
+            "If the input is thin, you MUST expand the narrative by explaining the technical complexity and operational scale of the work. "
+            "CRITICAL RULE: DO NOT INVENT NUMBERS. You are strictly forbidden from adding fake percentages, metrics, or financial figures. "
+            "Maximize impact using qualitative, executive language."
         )
     else:
         # STRICT MODE

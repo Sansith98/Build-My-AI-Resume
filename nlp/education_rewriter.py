@@ -12,11 +12,10 @@ except Exception:
 
 def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 0: return (1, 20)
-    if length_tier == 1: return (2, 40)
-    if length_tier == 2: return (3, 70)
-    if length_tier == 3: return (5, 100)
-    return (8, 150)
-
+    if length_tier == 1: return (2, 35)
+    if length_tier == 2: return (3, 55)
+    if length_tier == 3: return (4, 75)  # Keeps it looking like a bullet point, not an essay
+    return (5, 100)
 # ✅ FIXED: Few-Shot Examples added to break "Constraint Paralysis"
 def _system_prompt(creative_tier: int) -> str:
     if creative_tier <= 1:

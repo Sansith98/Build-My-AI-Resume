@@ -37,9 +37,9 @@ def _truncate_words(t: str, max_words: int) -> str:
 def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 0: return (1, 15)
     if length_tier == 1: return (2, 25) 
-    if length_tier == 2: return (3, 60) 
-    if length_tier == 3: return (5, 100) 
-    return (8, 180)                        # ✅ MASSIVE DETAIL                      # ✅ MASSIVE DETAIL                     # Very Long
+    if length_tier == 2: return (3, 50)  # Toned down slightly
+    if length_tier == 3: return (4, 75)  # Max 4 sentences, 75 words
+    return (5, 100)                      
 
 _FORBIDDEN_STARTS = ["Assisted", "Responsible for", "Tasked with", "Duties included", "Helped", "Worked on", "Participated in"]
 
@@ -110,7 +110,8 @@ def _user_prompt(bullets: List[str], tier: int, domain: str, verbs: List[str], t
             "max_sentences": max_sents,
             "hard_word_cap": cap,
             "forbidden_starts": _FORBIDDEN_STARTS,
-            "preferred_verbs": verbs[:10]
+            "preferred_verbs": verbs[:10],
+            "CRITICAL_RULE": "STRICTLY FORBIDDEN to invent percentages, metrics, or numbers. Focus on qualitative impact."
         },
         "targeting": {
             "target_role": (target_role or "").strip(),
