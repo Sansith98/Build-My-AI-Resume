@@ -1774,39 +1774,7 @@ function gatherCertifications() {
     certNoExpiry: cNE
   };
 }
-// 🚀 END RESTORED FUNCTIONS
 
-/* ===== Single-slider mapping → internal knobs ===== */
-// Matches app.py: <40 is Tier 0, <70 is Tier 1, else Tier 2
-function tierFromStyle(v){ if (v < 40) return 0; if (v < 70) return 1; return 2; }
-function verbosityFromStyle(v){ if (v <= 20) return 20; if (v <= 60) return 40 + Math.round((v-21)*(30/39)); return 75 + Math.round((v-61)*(25/39)); }
-function shouldQuantify(style, jobText){ const jt=(jobText||"").toLowerCase(); return style>=65 || /(\d|percent|%|\bk\b|\bm\b|roi|revenue|conversion|increased|reduced)/.test(jt); }
-function shouldEnforceRelevance(style, skillsText, role){
-  const skills = (skillsText||"").split(/\r?\n|,|;/).map(s=>s.trim()).filter(Boolean);
-  return Boolean(role && role.trim()) || skills.length > 12 || style >= 60;
-}
-function updateDerivedHint(){
-  // 1. Update Detail Level Badge
-  const dVal = Number(document.getElementById('detailLevel').value);
-  const tier = tierFromStyle(dVal);
-  const verbosity = verbosityFromStyle(dVal);
-  const detailModes = ["Concise", "Standard", "Detailed"];
-  document.getElementById('detailBadge').textContent = `${detailModes[tier]} (${dVal})`;
-
-  // 2. Update Creativity Badge
-  const cVal = Number(document.getElementById('creativity').value);
-  const creatModes = ["Consistent", "Balanced", "Unique"];
-  // map 0..2 roughly to low/mid/high for label
-  let cTier = 1; 
-  if(cVal < 35) cTier = 0; else if(cVal > 65) cTier = 2;
-  document.getElementById('creativityBadge').textContent = `${creatModes[cTier]} (${cVal})`;
-
-  // 3. Update Text Hint
-  // ✅ UPDATED: Visual hints to match new backend limits
-  const profileWords = (tier===0? "~60 words" : (tier===1? `~${80 + Math.round((verbosity-40)*1.0)} words` : `~${130 + Math.round((verbosity-75)*2)} words`));
-  document.getElementById('derivedHint').textContent =
-    `Output: Profile ${profileWords}. Creativity (${cVal}%) controls phrasing uniqueness.`;
-}
 
 /* ===== Skills builder ===== */
 function setSkillSliderUI(row, val){
@@ -1872,15 +1840,9 @@ function collectForm(){
   const jobTargetEnabled = (contentMode === "ai") && (resumeTarget === "job");
 
 
-  // Auto toggles (not shown in UI)
-  const tone_quantify = shouldQuantify(style, jobDescription);
-  const enforce_relevance = shouldEnforceRelevance(style, $('#skills')?.value || "", jobTitle);
-
   const d = {
     cfToken: document.querySelector('[name="cf-turnstile-response"]')?.value || "",
     aiMode: aiMode,
-    relevance_strict: enforce_relevance,
-    enforce_relevance: enforce_relevance,
 
     // template slug (hidden select)
     template: document.getElementById('templateSelect')?.value || "",
@@ -2208,10 +2170,8 @@ function restoreForm(d){
 
   // 14. Refresh UI states
   updateJobTargetUI();
-  updateDerivedHint();
-  checkGenerateReadiness(); // 🚀 ADDED HERE
+  checkGenerateReadiness();
 }
-
 /* ===== Helper: Convert Raw Form Data to Structured Data for Editor ===== */
 function structureRawData(d) {
   const getVal = (arr, i) => (arr && arr[i]) ? arr[i] : "";
