@@ -17,29 +17,31 @@ def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 3: return (5, 100)
     return (8, 150)
 
-# ✅ UPDATED: Safety Rules + Style
+# ✅ FIXED: Dynamic tone (removes "crisp" from high tiers) + Strict JSON Schema
 def _system_prompt(creative_tier: int) -> str:
-    base = "Rewrite EDUCATION details into crisp, job-relevant wording.\n"
     if creative_tier <= 1:
-        return base + (
+        return (
+            "Rewrite the following EDUCATION details to fix grammar and formatting. Keep it crisp and concise.\n"
             "CRITICAL: **STRICT FIDELITY.**\n"
             "- Do not invent coursework or projects.\n"
-            "- If the user lists 'Databases', do NOT change it to 'Advanced Database Systems' unless specified.\n"
-            "Output JSON only."
+            "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     elif creative_tier <= 3:
-        return base + (
+        return (
+            "Rewrite EDUCATION details into professional, job-relevant wording.\n"
             "CREATIVE RULES:\n"
             "- Highlight relevant coursework that matches the Target Job.\n"
-            "- You may smooth out the text to sound more professional and academic.\n"
-            "Output JSON only."
+            "- Smooth out the text to sound more professional and academic.\n"
+            "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
-        return base + (
+        return (
+            "Rewrite and EXPAND the EDUCATION details into highly detailed, impressive descriptions.\n"
             "INVENTIVE RULES:\n"
-            "- You may assume standard coursework for this degree if not listed (e.g. 'Data Structures' for CS) to better align with the target job.\n"
-            "- Elaborate on the significance of the research/thesis.\n"
-            "Output JSON only."
+            "- You MUST expand brief project notes into deep, detailed bullet points.\n"
+            "- Elaborate heavily on the significance, technical tools used, and outcomes of the research/thesis/projects.\n"
+            "- You may assume standard coursework for this degree if not listed to better align with the target job.\n"
+            "- Output JSON strictly in this format: {\"text\": \"your expanded text\"}"
         )
 
 def _user_prompt(text: str, tier: int, target_role: str, job_description: str, why_fit: str, jd_keywords: Optional[List[str]]) -> str:
