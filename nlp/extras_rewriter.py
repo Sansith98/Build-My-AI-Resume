@@ -52,13 +52,12 @@ def _truncate_words(txt: str, cap: int) -> str:
     return " ".join(w[:cap]).rstrip(",;:.! ") + "."
 
 def _system_prompt(creative_tier: int) -> str:
-    # ✅ FIX: The word "JSON" is strictly required by the OpenAI API here
     formatting = (
         "\nCRITICAL INSTRUCTIONS:\n"
         "1. YOU MUST KEEP THE ACTUAL NAME OF THE SPORT, CLUB, OR ACTIVITY. Never erase the noun.\n"
         "2. Keep descriptions concise (maximum 1-2 bullet points per item).\n"
         "3. If there are multiple items within a single text block, format them on separate lines starting with a dash (-).\n"
-        "4. OUTPUT JSON ONLY. You must return a strict JSON object where the keys exactly match the input keys.\n"
+        "4. OUTPUT JSON ONLY. You must return a strict JSON object mapping the exact keys provided (e.g., {\"item_0\": \"rewritten text\"}).\n"
     )
 
     if creative_tier <= 1:
@@ -69,11 +68,11 @@ def _system_prompt(creative_tier: int) -> str:
             "but the actual activity name MUST remain the main focus." + formatting
         )
     return (
-        "You are a professional resume strategist. Enhance the extracurricular activity to sound professional without losing the facts.\n"
+        "You are a professional resume strategist. Enhance the extracurricular activity to sound highly professional and impactful.\n"
         "Pattern to follow: '[Name of Activity]: [1 brief professional sentence].'\n"
         "Example 1: 'University Esports Team' -> 'Competitive Esports Player: Coordinated team strategies and analyzed fast-paced gameplay.'\n"
         "Example 2: 'Karting Club' -> 'Karting Club Member: Cultivated focus and quick decision-making in high-pressure racing environments.'\n"
-        "CRITICAL: NEVER remove, summarize, or alter specific award names, honors, degrees, or parentheticals (e.g., '(Honours)'). You must preserve them exactly as provided.\n"
+        "CRITICAL: NEVER remove, summarize, or alter specific award names, titles, degrees, or academic parentheticals (e.g., specific university distinctions). You must preserve them exactly as provided.\n"
         + formatting
     )
 
@@ -81,16 +80,15 @@ def _user_prompt(items: List[str], length_tier: int, target_role: str, job_descr
     cap = _tier_targets(length_tier)
     items_dict = {f"item_{i}": text for i, text in enumerate(items)}
     
+    # ✅ FIX: Simplified JSON payload so the AI doesn't nest the response
     return json.dumps({
-        "hard_word_cap": cap, 
+        "instruction": f"Rewrite the values in input_data. Max {cap} words per item.", 
         "targeting": {
             "target_role": (target_role or "").strip(),
             "job_description": (job_description or "").strip(),
-            "why_fit": (why_fit or "").strip(),
-            "jd_keywords": jd_keywords or []
+            "why_fit": (why_fit or "").strip()
         },
-        "input_data": items_dict,
-        "expected_json_format": items_dict
+        "input_data": items_dict
     }, ensure_ascii=False)
 
 def _validate_item(txt: str, length_tier: int) -> str:
@@ -152,16 +150,24 @@ class ExtrasRewriter:
             raw = rsp.choices[0].message.content or "{}"
             data = json.loads(raw)
             
+            # 🚀 ROBUST UN-NESTING FIX: If the AI wraps the response in a parent key, extract it!
+            if "input_data" in data:
+                data = data["input_data"]
+            elif "expected_json_format" in data:
+                data = data["expected_json_format"]
+            elif "items" in data:
+                data = data["items"]
+            
             ai_items = []
             for i in range(len(items)):
                 key = f"item_{i}"
-                if key in data:
+                # Make sure the key exists AND the value is actually a string
+                if key in data and isinstance(data[key], str):
                     ai_items.append(data[key])
                 else:
                     ai_items.append(items[i])
                 
-            return [_validate_item(i, length_tier) for i in ai_items]
-            
+            return [_validate_item(i, length_tier) for i in ai_items]            
         except Exception as e:
             print(f"ExtrasRewriter Error: {e}") 
             return [_validate_item(i, length_tier) for i in items]

@@ -17,7 +17,8 @@ def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 3: return (5, 100)
     return (8, 150)
 
-# ✅ FIXED: Dynamic tone (removes "crisp" from high tiers) + Strict JSON Schema
+# ✅ FIXED: AI is now given explicit permission to alter sentence structure while protecting data
+# ✅ FIXED: Completely generic, globally applicable system prompt
 def _system_prompt(creative_tier: int) -> str:
     if creative_tier <= 1:
         return (
@@ -30,19 +31,20 @@ def _system_prompt(creative_tier: int) -> str:
         return (
             "Rewrite EDUCATION details into professional, job-relevant wording.\n"
             "CREATIVE RULES:\n"
-            "- Convert raw project notes into strong, active-voice professional statements (e.g., use verbs like 'Developed', 'Designed', 'Engineered').\n"
+            "- You MUST actively rewrite the sentence structure. Convert raw project notes into strong, active-voice professional statements (e.g., start with 'Developed', 'Designed', 'Engineered').\n"
+            "- Add professional connective words to make it flow like a high-end resume achievement.\n"
             "- Highlight relevant coursework that matches the Target Job.\n"
-            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific hardware/software. You must preserve them exactly.\n"
+            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific technical terminology (e.g., exact hardware components, programming languages, frameworks, or software tools). You must preserve these data points exactly, but you are free to completely rewrite the text around them.\n"
             "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
         return (
-            "Rewrite and EXPAND the EDUCATION details into highly detailed, impressive descriptions.\n"
+            "Rewrite and MASSIVELY EXPAND the EDUCATION details into highly detailed, impressive descriptions.\n"
             "INVENTIVE RULES:\n"
-            "- You MUST expand brief project notes into deep, detailed bullet points.\n"
-            "- Elaborate heavily on the significance, technical tools used, and outcomes of the research/thesis/projects.\n"
-            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific hardware/software (e.g., PH Sensors, TDS Sensors). You must preserve them exactly.\n"
-            "- Output JSON strictly in this format: {\"text\": \"your expanded text\"}"
+            "- You MUST expand brief project notes into deep, detailed, multi-line explanations.\n"
+            "- Elaborate heavily on the significance, technical tools used, methodology, and outcomes of the research/thesis/projects. Make it sound highly executive.\n"
+            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific technical terminology (e.g., exact hardware components, programming languages, frameworks, or software tools). You must preserve these specific entities exactly, but completely transform and bulk up the narrative around them.\n"
+            "- Output JSON strictly in this format: {\"text\": \"your massively expanded text\"}"
         )
 
 def _user_prompt(text: str, tier: int, target_role: str, job_description: str, why_fit: str, jd_keywords: Optional[List[str]]) -> str:
