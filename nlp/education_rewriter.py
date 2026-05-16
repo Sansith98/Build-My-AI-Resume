@@ -17,8 +17,7 @@ def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 3: return (5, 100)
     return (8, 150)
 
-# ✅ FIXED: AI is now given explicit permission to alter sentence structure while protecting data
-# ✅ FIXED: Completely generic, globally applicable system prompt
+# ✅ FIXED: Few-Shot Examples added to break "Constraint Paralysis"
 def _system_prompt(creative_tier: int) -> str:
     if creative_tier <= 1:
         return (
@@ -31,10 +30,11 @@ def _system_prompt(creative_tier: int) -> str:
         return (
             "Rewrite EDUCATION details into professional, job-relevant wording.\n"
             "CREATIVE RULES:\n"
-            "- You MUST actively rewrite the sentence structure. Convert raw project notes into strong, active-voice professional statements (e.g., start with 'Developed', 'Designed', 'Engineered').\n"
-            "- Add professional connective words to make it flow like a high-end resume achievement.\n"
-            "- Highlight relevant coursework that matches the Target Job.\n"
-            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific technical terminology (e.g., exact hardware components, programming languages, frameworks, or software tools). You must preserve these data points exactly, but you are free to completely rewrite the text around them.\n"
+            "- You MUST actively rewrite the sentence structure. Convert raw project notes into strong, active-voice professional statements.\n"
+            "- EXAMPLE PATTERN:\n"
+            "  * Input: 'Project: Solar Tracker (Arduino / LDR)'\n"
+            "  * Output: 'Project: Engineered an automated Dual Axis Solar Tracker utilizing Arduino and LDR sensors to dynamically optimize energy capture.'\n"
+            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific technical terminology (e.g., hardware components, programming languages, software tools). You must preserve these data points exactly.\n"
             "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
@@ -42,8 +42,11 @@ def _system_prompt(creative_tier: int) -> str:
             "Rewrite and MASSIVELY EXPAND the EDUCATION details into highly detailed, impressive descriptions.\n"
             "INVENTIVE RULES:\n"
             "- You MUST expand brief project notes into deep, detailed, multi-line explanations.\n"
-            "- Elaborate heavily on the significance, technical tools used, methodology, and outcomes of the research/thesis/projects. Make it sound highly executive.\n"
-            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific technical terminology (e.g., exact hardware components, programming languages, frameworks, or software tools). You must preserve these specific entities exactly, but completely transform and bulk up the narrative around them.\n"
+            "- You are AUTHORIZED to infer the professional methodology and standard applications of the provided tools to create a rich narrative (e.g., explaining how sensors gather data and transmit it).\n"
+            "- EXAMPLE PATTERN:\n"
+            "  * Input: 'Project: Weather App (React, Node.js)'\n"
+            "  * Output: 'Project: Developed a comprehensive full-stack Weather Application integrating React and Node.js. Architected the system to process real-time environmental data, ensuring seamless user interaction and high-performance API data retrieval.'\n"
+            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific technical terminology. You must preserve every single provided tool and metric exactly as written, but completely transform and bulk up the narrative around them.\n"
             "- Output JSON strictly in this format: {\"text\": \"your massively expanded text\"}"
         )
 
