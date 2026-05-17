@@ -114,7 +114,10 @@ def _compose_facts(form: Dict[str, Any], struct: Dict[str, Any]) -> Dict[str, An
         "sports": struct.get("sports", []),
         "job_description": (form.get("jobDescription") or "").strip(),
         "why_fit": (form.get("whyFit") or "").strip(),
-        "jd_keywords": _jd_keywords(form.get("jobDescription",""))
+        "jd_keywords": _jd_keywords(form.get("jobDescription","")),
+        # Preserve the user's actual original profile text for Fix & Polish mode.
+        # struct["profile"] holds what was submitted before any AI rewrites.
+        "original_profile": (struct.get("profile") or "").strip(),
     }
     return facts
 
@@ -228,11 +231,16 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
                  target_role: str, job_description: str,
                  forbid: List[str], seed: str, facts: Dict[str, Any], creative_tier: int) -> str:
     
-    # 🚀 TIER 1: SHORT-CIRCUIT. Only send the user's original text!
+    # 🚀 TIER 1: SHORT-CIRCUIT. Only send the user's original profile text!
     if creative_tier <= 1:
+        # Use the original profile text from facts, NOT the AI-generated scaffold.
+        # Scaffold is synthetic fallback content — proofreading it would replace
+        # the user's actual words with AI-invented sentences.
+        original_profile = (facts.get("original_profile") or "").strip()
+        input_text = original_profile if original_profile else (why_fit.strip() if why_fit.strip() else "")
         return json.dumps({
-            "instruction": "Fix grammar, spelling, and basic punctuation ONLY. Do not rewrite or add facts.",
-            "input_text": why_fit if why_fit.strip() else " ".join(scaffold)
+            "instruction": "Fix grammar, spelling, and basic punctuation ONLY. Do not rewrite, restructure, or add any new facts, skills, or words.",
+            "input_text": input_text
         }, ensure_ascii=False)
 
     # 🚀 TIERS 2 & 3: Normal Generation
@@ -429,7 +437,10 @@ class ProfileRewriter:
                 prof = cleanup_paragraph(prof)
                 prof = proofread_paragraph(prof)
 
-                ok, fixed = _validate(prof, max_sents, hard_cap, min_sentences=max(1, 1 if creative_tier==0 else (3 if creative_tier==1 else 4)))
+                # For Fix & Polish (tier <= 1): accept any non-empty result (min=1).
+                # Requiring 3+ sentences would force retries that drift from the original text.
+                _min_sents = 1 if creative_tier <= 1 else (3 if creative_tier == 2 else 4)
+                ok, fixed = _validate(prof, max_sents, hard_cap, min_sentences=_min_sents)
                 if ok:
                     return fixed
 
@@ -470,5 +481,12 @@ class ProfileRewriter:
         
         if prof:
             return prof
+
+        # For Fix & Polish (tier <= 1), fall back to the original profile text as-is
+        # rather than the AI-generated scaffold, which would replace the user's words.
+        if creative_tier <= 1:
+            original = facts.get("original_profile", "")
+            if original:
+                return original
 
         return self._compose_fallback(scaffold, max_sents, hard_cap, min_sents)
