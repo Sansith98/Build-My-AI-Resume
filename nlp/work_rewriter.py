@@ -37,9 +37,9 @@ def _truncate_words(t: str, max_words: int) -> str:
 def _tier_targets(length_tier: int) -> Tuple[int, int]:
     if length_tier == 0: return (1, 15)
     if length_tier == 1: return (2, 25) 
-    if length_tier == 2: return (3, 50)  # Toned down slightly
-    if length_tier == 3: return (4, 75)  # Max 4 sentences, 75 words
-    return (5, 100)                      
+    if length_tier == 2: return (2, 35)  # Professional Upgrade (Crisp)
+    if length_tier == 3: return (3, 50)  # Max Expansion (Strict 50 word cap)
+    return (4, 80)                      
 
 _FORBIDDEN_STARTS = ["Assisted", "Responsible for", "Tasked with", "Duties included", "Helped", "Worked on", "Participated in"]
 

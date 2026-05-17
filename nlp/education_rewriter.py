@@ -11,12 +11,12 @@ except Exception:
 # nlp/education_rewriter.py
 
 def _tier_targets(length_tier: int) -> Tuple[int, int]:
-    if length_tier == 0: return (1, 20)
-    if length_tier == 1: return (2, 35)
-    if length_tier == 2: return (3, 55)
-    if length_tier == 3: return (4, 75)  # Keeps it looking like a bullet point, not an essay
-    return (5, 100)
-# ✅ FIXED: Few-Shot Examples added to break "Constraint Paralysis"
+    if length_tier == 0: return (1, 15)
+    if length_tier == 1: return (2, 25)
+    if length_tier == 2: return (2, 40)
+    if length_tier == 3: return (3, 50)  # Capped at 50 words (Visually perfect for PDF)
+    return (4, 80)
+
 def _system_prompt(creative_tier: int) -> str:
     if creative_tier <= 1:
         return (
@@ -33,20 +33,21 @@ def _system_prompt(creative_tier: int) -> str:
             "- EXAMPLE PATTERN:\n"
             "  * Input: 'Project: Solar Tracker (Arduino / LDR)'\n"
             "  * Output: 'Project: Engineered an automated Dual Axis Solar Tracker utilizing Arduino and LDR sensors to dynamically optimize energy capture.'\n"
-            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific technical terminology (e.g., hardware components, programming languages, software tools). You must preserve these data points exactly.\n"
+            "- CRITICAL: NEVER remove Grades, GPAs, Honors, or specific technical terminology.\n"
             "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
+        # Toned down "massively expand" to just "EXPAND"
         return (
-            "Rewrite and MASSIVELY EXPAND the EDUCATION details into highly detailed, impressive descriptions.\n"
+            "Rewrite and EXPAND the EDUCATION details into highly professional, detailed descriptions.\n"
             "INVENTIVE RULES:\n"
-            "- You MUST expand brief project notes into deep, detailed, multi-line explanations.\n"
+            "- Expand brief project notes into a clear, cohesive professional summary.\n"
             "- You are AUTHORIZED to infer the professional methodology and standard applications of the provided tools to create a rich narrative (e.g., explaining how sensors gather data and transmit it).\n"
             "- EXAMPLE PATTERN:\n"
             "  * Input: 'Project: Weather App (React, Node.js)'\n"
             "  * Output: 'Project: Developed a comprehensive full-stack Weather Application integrating React and Node.js. Architected the system to process real-time environmental data, ensuring seamless user interaction and high-performance API data retrieval.'\n"
-            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific technical terminology. You must preserve every single provided tool and metric exactly as written, but completely transform and bulk up the narrative around them.\n"
-            "- Output JSON strictly in this format: {\"text\": \"your massively expanded text\"}"
+            "- CRITICAL: NEVER remove or summarize Grades, GPAs, Honors, or specific technical terminology. Transform the narrative around them without becoming overly wordy.\n"
+            "- Output JSON strictly in this format: {\"text\": \"your expanded text\"}"
         )
 
 def _user_prompt(text: str, tier: int, target_role: str, job_description: str, why_fit: str, jd_keywords: Optional[List[str]]) -> str:
