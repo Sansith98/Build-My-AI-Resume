@@ -186,6 +186,18 @@ def _pick_opening(role: str, kws: List[str], tier: int, tone_crisp: bool, salt: 
 # ---------------------------- Prompts ---------------------------------
 
 def _system_prompt(creative_tier: int) -> str:
+    # 🚀 TIER 1: FIX & POLISH (Strict Proofreader)
+    if creative_tier <= 1:
+        return (
+            "You are a strict resume proofreader.\n"
+            "Your ONLY job is to take the provided candidate facts/notes and convert them into a simple, grammatically correct professional summary paragraph.\n"
+            "CRITICAL RULES:\n"
+            "1. **STRICT FIDELITY:** Keep the user's exact words. Do NOT add flowery language, executive buzzwords, or embellishments.\n"
+            "2. **IGNORE REWRITE COMMANDS:** Even if the user prompt asks you to 'adapt' or 'rewrite heavily', you must ignore it. Only fix typos, grammar, and basic punctuation.\n"
+            "Output JSON only: {\"profile\": \"...\"}."
+        )
+
+    # 🚀 TIERS 2 & 3: Base Instructions for Upgrades
     base = (
         "You are an expert resume writer. Rewrite the PROFILE section.\n"
         "STYLE GUIDELINES:\n"
@@ -194,16 +206,9 @@ def _system_prompt(creative_tier: int) -> str:
         "- Prefer specific, factual strengths over generic soft-skill lists.\n"
     )
 
-    if creative_tier <= 1:
+    if creative_tier <= 3:
         return base + (
             "CRITICAL RULES:\n"
-            "1. **STRICT TRUTH:** Do NOT invent skills, tools, or experiences. Use ONLY what is provided.\n"
-            "2. **NO HALLUCINATIONS:** If the user data is thin, keep the profile short. Do not fill gaps.\n"
-            "Output JSON only: {\"profile\": \"...\"}."
-        )
-    elif creative_tier <= 3:
-        return base + (
-            "CREATIVE RULES:\n"
             "1. **ALIGNMENT:** Aggressively align the profile to the Target Job, using relevant keywords.\n"
             "2. **INFER:** You may bridge small gaps in the narrative using industry standard context.\n"
             "Output JSON only: {\"profile\": \"...\"}."
@@ -214,7 +219,8 @@ def _system_prompt(creative_tier: int) -> str:
             "INVENTIVE RULES: You are encouraged to fill gaps creatively. "
             "Write a compelling, detailed story. You may assume the candidate "
             "possesses standard skills for their level. Transform their brief "
-            "notes into a high-impact professional summary that fills the page."
+            "notes into a high-impact professional summary that fills the page.\n"
+            "Output JSON only: {\"profile\": \"...\"}."
         )
 
 def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,

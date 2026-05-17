@@ -60,13 +60,24 @@ def _system_prompt(creative_tier: int) -> str:
         "4. OUTPUT JSON ONLY. You must return a strict JSON object mapping the exact keys provided (e.g., {\"item_0\": \"rewritten text\"}).\n"
     )
 
+    # 🚀 TIER 1: FIX & POLISH (Strict Proofreader)
     if creative_tier <= 1:
-        return "You are a strict resume editor. Fix grammar only. Keep it 100% factual." + formatting
+        return (
+            "You are a strict resume proofreader. Your ONLY job is to fix grammar, spelling, and basic punctuation.\n"
+            "CRITICAL RULES:\n"
+            "1. STRICT FIDELITY: Keep the user's exact words. Do NOT rewrite, restructure, or enhance the items.\n"
+            "2. NO ENHANCEMENTS: Do NOT add new vocabulary or buzzwords.\n"
+            + formatting
+        )
+        
+    # 🚀 TIER 2: Professional Upgrade
     if creative_tier <= 3:
         return (
             "You are an expert resume editor. Polish the text and optionally highlight one related soft skill, "
             "but the actual activity name MUST remain the main focus." + formatting
         )
+        
+    # 🚀 TIER 3: Maximum Expansion
     return (
         "You are a professional resume strategist. Enhance the extracurricular activity to sound highly professional and impactful.\n"
         "Pattern to follow: '[Name of Activity]: [1 brief professional sentence].'\n"
