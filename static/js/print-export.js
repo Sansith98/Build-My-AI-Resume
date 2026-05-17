@@ -379,29 +379,14 @@ function svgElementToPngBase64(svgEl, exactW, exactH, padPx = 0) {
     });
 }
 // ── Helper: Image to Base64 (Crucial for Studio Blob Uploads) ─────────────
-// Always re-encodes to PNG via canvas — this converts WebP, blob URLs, and
-// cross-origin images into a safe, universally-supported format before the
-// layout JSON is sent to the Python PDF engine.  ReportLab + Pillow can both
-// read PNG, but only Pillow can read WebP, and Pillow may not be installed on
-// some deployment platforms (e.g. DigitalOcean) unless explicitly added to
-// requirements.txt.  By normalising here in the browser we guarantee the
-// server always receives PNG regardless of the original upload format.
 function imageToDataUrl(imgEl) {
     return new Promise((resolve) => {
         if (!imgEl || !imgEl.src) return resolve("");
-
-        // If already a data-URL, check if it is WebP. If so, re-encode to PNG.
-        // If it is PNG/JPEG already, return as-is — no re-encoding needed.
-        if (imgEl.src.startsWith("data:")) {
-            if (!imgEl.src.startsWith("data:image/webp")) {
-                return resolve(imgEl.src); // PNG/JPEG data-URL: safe to pass through
-            }
-            // WebP data-URL: fall through to the canvas re-encode below
-        }
-
+        if (imgEl.src.startsWith("data:")) return resolve(imgEl.src);
+        
         const img = new Image();
         
-        // 🚀 BLOB FIX: Never apply CORS to a local blob URL — canvas conversion crashes with CORS on blobs.
+        // 🚀 BLOB FIX: Never apply CORS to a local blob URL, otherwise the canvas conversion crashes!
         if (!imgEl.src.startsWith("blob:")) {
             img.crossOrigin = "Anonymous"; 
         }
@@ -409,16 +394,12 @@ function imageToDataUrl(imgEl) {
         img.onload = () => {
             try {
                 const canvas = document.createElement("canvas");
-                // Use naturalWidth/Height to get the true pixel dimensions,
-                // not the CSS-constrained layout size.
-                canvas.width  = img.naturalWidth  || 800;
+                canvas.width = img.naturalWidth || 800;
                 canvas.height = img.naturalHeight || 800;
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0);
-                // Always export as PNG — works on every server regardless of Pillow install.
                 resolve(canvas.toDataURL("image/png"));
             } catch (err) {
-                // Canvas tainted (cross-origin) or other error: send the raw src as fallback.
                 resolve(imgEl.src);
             }
         };
@@ -1092,56 +1073,68 @@ async function captureCurrentLayout() {
 
     const hideStyle = document.createElement("style");
     let styleContent = `
+      /* Hide everything on the live page except our clean print container */
       body > *:not(#bulletproof-print-container) { display: none !important; }
-      
-      * { 
-        -webkit-print-color-adjust: exact !important; 
-        print-color-adjust: exact !important; 
+
+      /*
+       * INTENTIONALLY MINIMAL PRINT STYLES
+       * ─────────────────────────────────────────────────────────────────────
+       * We deliberately avoid rendering-hint overrides like:
+       *   - -webkit-font-smoothing / -moz-osx-font-smoothing
+       *   - text-rendering: optimizeLegibility
+       *   - shape-rendering / image-rendering
+       *
+       * These look helpful but cause the browser's print rasteriser to alter
+       * text weight (antialiased makes glyphs appear heavier in print context),
+       * shift letter-spacing (optimizeLegibility enables kerning/ligature
+       * hinting differently per platform), and change how edges are sampled
+       * (crisp-edges/geometricPrecision can thicken lines and borders).
+       *
+       * The browser's native print pipeline already does the right thing when
+       * left alone. We only set what is strictly required for layout.
+       */
+
+      /* 1. Preserve background colors and images exactly as designed */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
-      /* 🚀 1. NATIVE BASE */
-      .a4 * {
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: optimizeLegibility !important;
-        user-select: text !important;
-        -webkit-user-select: text !important;
-      }
-
-      /* 🚀 2. VECTOR GRAPHICS ENFORCEMENT */
-      /* geometricPrecision keeps BOTH straight lines sharp AND rounded corners beautifully smooth */
-      svg, img, hr, .shape-el, [class*="indicator"], [class*="bar"], [class*="line"], rect {
-          shape-rendering: geometricPrecision !important;
-          image-rendering: crisp-edges !important;
-      }
-
-      /* 🚀 3. STRICT PAGINATION LOCK (The Guillotine) */
-      /* This completely stops elements from bleeding onto the next printed page */
+      /* 2. Strict page sizing and pagination — prevents content bleeding */
       .a4 {
         position: relative !important;
         width: 794px !important;
-        height: 1123px !important; /* Exact A4 Pixel Height */
+        height: 1123px !important;
         max-height: 1123px !important;
-        overflow: hidden !important; /* Visually chops off anything crossing the line */
-        
-        /* Force the browser to respect the page break */
+        overflow: hidden !important;
         page-break-after: always !important;
         break-after: page !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        
         margin: 0 auto !important;
+        /* No box-shadow, filter, or transform — these alter how the print
+           engine composites layers and can subtly shift colours/weights */
+        box-shadow: none !important;
+        filter: none !important;
+        transform: none !important;
       }
 
-      @page { 
-        size: A4 portrait; 
-        margin: 0 !important; 
+      /* 3. Strip any editor-UI shadows or transforms from child elements */
+      .a4 * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        outline: none !important;
       }
-      
-      html, body { 
-        background: #fff !important; 
-        margin: 0 !important; 
-        padding: 0 !important; 
+
+      @page {
+        size: A4 portrait;
+        margin: 0 !important;
+      }
+
+      html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
     `;
     hideStyle.innerHTML = styleContent;
