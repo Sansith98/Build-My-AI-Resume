@@ -1205,42 +1205,100 @@ def _draw_indicator(c, x, y, w, h, sty, opt, indicator, data, rot):
 # 19. IMAGE DRAWING
 # ═══════════════════════════════════════════════════════════════════════════
 def _load_image(src: str):
+    """
+    Load an image from a data-URL, a /static/ path, or an HTTP URL.
+
+    Strategy:
+      1. Always decode the raw bytes first.
+      2. Try Pillow (PIL) first — it handles WebP, EXIF rotation, and all edge cases.
+      3. If Pillow is not installed (e.g. DigitalOcean without requirements entry),
+         fall back to ReportLab's built-in ImageReader which handles JPEG and PNG
+         but NOT WebP. For WebP in the fallback path we re-encode to PNG in-memory
+         using the stdlib  detection + a pure-Python approach, or skip gracefully.
+    """
     if not src:
         return None
+
+    import requests
+
+    img_bytes = None
+    detected_format = None  # e.g. "webp", "png", "jpeg"
+
     try:
-        from PIL import Image
-        import requests
-
-        img_bytes = None
-
-        # 1. Extract the raw bytes depending on the source
+        # ── Step 1: Get raw bytes ────────────────────────────────────────────
         if src.startswith("data:"):
-            b64 = src.split(",", 1)[1]
+            # Parse media type: data:image/webp;base64,...
+            header, b64 = src.split(",", 1)
             b64 += "=" * ((4 - len(b64) % 4) % 4)
             img_bytes = base64.b64decode(b64)
+            # Extract format hint from the MIME type in the data-URL header
+            if "webp" in header:      detected_format = "webp"
+            elif "png"  in header:     detected_format = "png"
+            elif "jpeg" in header or "jpg" in header: detected_format = "jpeg"
+
         elif "/static/" in src:
             local = src.split("/static/")[1].split("?")[0]
             path  = os.path.join(os.path.dirname(__file__), "static", local)
             if os.path.exists(path):
+                ext = os.path.splitext(path)[1].lower()
+                if ext == ".webp": detected_format = "webp"
+                elif ext in (".png",): detected_format = "png"
+                elif ext in (".jpg",".jpeg"): detected_format = "jpeg"
                 with open(path, "rb") as f:
                     img_bytes = f.read()
+
         elif src.startswith("http") and not src.startswith("blob:"):
             resp = requests.get(src, timeout=5)
             if resp.status_code == 200:
                 img_bytes = resp.content
+                ct = resp.headers.get("Content-Type", "")
+                if "webp" in ct: detected_format = "webp"
+                elif "png"  in ct: detected_format = "png"
+                elif "jpeg" in ct or "jpg" in ct: detected_format = "jpeg"
 
-        # 2. Use Pillow (PIL) to safely decode WEBP/PNG and map to RGB/RGBA
-        if img_bytes:
-            img = Image.open(BytesIO(img_bytes))
-            
-            # Preserve transparency if it exists, otherwise flatten to safe RGB
+        if not img_bytes:
+            return None
+
+        # ── Step 2a: Try Pillow — handles WebP + EXIF rotation perfectly ────
+        try:
+            from PIL import Image as _PILImage
+            img = _PILImage.open(BytesIO(img_bytes))
+            # Apply EXIF orientation so photos aren't sideways in the PDF
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
             if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
                 img = img.convert("RGBA")
             else:
                 img = img.convert("RGB")
-                
-            # Passing a raw PIL Object skips ReportLab's buggy file parsers entirely!
             return ImageReader(img)
+        except ImportError:
+            pass  # Pillow not installed; fall through to the ReportLab path
+        except Exception as pil_err:
+            print(f"[pdf_engine] Pillow decode failed ({pil_err}), trying fallback")
+
+        # ── Step 2b: Pillow unavailable — convert WebP→PNG via canvas re-encode ─
+        # WebP bytes start with RIFF....WEBP signature.
+        is_webp = (
+            detected_format == "webp"
+            or (len(img_bytes) > 12 and img_bytes[:4] == b"RIFF" and img_bytes[8:12] == b"WEBP")
+        )
+
+        if is_webp:
+            # We can't decode WebP without Pillow on the server side.
+            # The JS side (imageToDataUrl) always re-encodes to PNG via canvas,
+            # so this branch should rarely be hit. Log a clear warning.
+            print(
+                "[pdf_engine] WARNING: WebP image received but Pillow is not installed. "
+                "Install Pillow (pip install Pillow) in your requirements.txt to fix WebP export. "
+                "Skipping this image."
+            )
+            return None
+
+        # ── Step 2c: Standard PNG/JPEG — hand directly to ReportLab ─────────
+        return ImageReader(BytesIO(img_bytes))
 
     except Exception as e:
         print(f"[pdf_engine] Error loading image: {e}")

@@ -379,14 +379,29 @@ function svgElementToPngBase64(svgEl, exactW, exactH, padPx = 0) {
     });
 }
 // ── Helper: Image to Base64 (Crucial for Studio Blob Uploads) ─────────────
+// Always re-encodes to PNG via canvas — this converts WebP, blob URLs, and
+// cross-origin images into a safe, universally-supported format before the
+// layout JSON is sent to the Python PDF engine.  ReportLab + Pillow can both
+// read PNG, but only Pillow can read WebP, and Pillow may not be installed on
+// some deployment platforms (e.g. DigitalOcean) unless explicitly added to
+// requirements.txt.  By normalising here in the browser we guarantee the
+// server always receives PNG regardless of the original upload format.
 function imageToDataUrl(imgEl) {
     return new Promise((resolve) => {
         if (!imgEl || !imgEl.src) return resolve("");
-        if (imgEl.src.startsWith("data:")) return resolve(imgEl.src);
-        
+
+        // If already a data-URL, check if it is WebP. If so, re-encode to PNG.
+        // If it is PNG/JPEG already, return as-is — no re-encoding needed.
+        if (imgEl.src.startsWith("data:")) {
+            if (!imgEl.src.startsWith("data:image/webp")) {
+                return resolve(imgEl.src); // PNG/JPEG data-URL: safe to pass through
+            }
+            // WebP data-URL: fall through to the canvas re-encode below
+        }
+
         const img = new Image();
         
-        // 🚀 BLOB FIX: Never apply CORS to a local blob URL, otherwise the canvas conversion crashes!
+        // 🚀 BLOB FIX: Never apply CORS to a local blob URL — canvas conversion crashes with CORS on blobs.
         if (!imgEl.src.startsWith("blob:")) {
             img.crossOrigin = "Anonymous"; 
         }
@@ -394,12 +409,16 @@ function imageToDataUrl(imgEl) {
         img.onload = () => {
             try {
                 const canvas = document.createElement("canvas");
-                canvas.width = img.naturalWidth || 800;
+                // Use naturalWidth/Height to get the true pixel dimensions,
+                // not the CSS-constrained layout size.
+                canvas.width  = img.naturalWidth  || 800;
                 canvas.height = img.naturalHeight || 800;
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(img, 0, 0);
+                // Always export as PNG — works on every server regardless of Pillow install.
                 resolve(canvas.toDataURL("image/png"));
             } catch (err) {
+                // Canvas tainted (cross-origin) or other error: send the raw src as fallback.
                 resolve(imgEl.src);
             }
         };

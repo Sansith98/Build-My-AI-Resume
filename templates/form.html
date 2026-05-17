@@ -1065,25 +1065,19 @@
     </div>
 
     <div class="form-section" id="ai-engine-wrapper" style="flex: 1 1 60%; min-width: 250px; transition: all 0.3s;">
+      <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px;">2. AI Enhancement Engine</h3>
       
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 10px;">
-          <h3 style="color: var(--brand-strong); font-size: 1.1rem; margin: 0; border: none; padding: 0;">2. AI Enhancement Engine</h3>
-          <span style="font-size: 10px; background: rgba(14, 165, 233, 0.1); color: #0ea5e9; padding: 3px 6px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Ad Supported</span>
-      </div>
-      <p style="font-size: 13px; color: var(--muted); margin-top: 0; margin-bottom: 15px; line-height: 1.4;">
-          To keep our advanced AI rewriting features 100% free, your export may include a brief sponsor message.
-      </p>
-      
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">          <label class="ai-mode-card">
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <label class="ai-mode-card">
               <input type="radio" name="aiMode" value="strict" style="margin-bottom: 10px;">
               <div class="mode-title" style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--ink);">Fix & Polish</div>
-              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Fixes grammar and formatting while performing minor phrasing enhancements.</div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Strictly fixes grammar and formatting. Keeps your exact words.</div>
           </label>
 
           <label class="ai-mode-card active">
               <input type="radio" name="aiMode" value="balanced" checked style="margin-bottom: 10px;">
               <div class="mode-title" style="font-weight: bold; font-size: 14px; margin-bottom: 6px; color: var(--brand);">Professional Upgrade</div>
-              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Upgrades vocabulary and creates an executive tone through moderate enhancements.</div>
+              <div style="font-size: 12px; color: var(--muted); line-height: 1.4;">Upgrades vocabulary, adds metrics, and creates an executive tone.</div>
           </label>
 
           <label class="ai-mode-card">
@@ -2364,26 +2358,34 @@ function compressImage(file, maxSize, callback) {
         img.onload = function() {
             const MAX_WIDTH = maxSize;
             const MAX_HEIGHT = maxSize;
-            let width = img.width;
-            let height = img.height;
+
+            // Use naturalWidth/naturalHeight — these are the TRUE pixel dimensions of the
+            // decoded image, unaffected by CSS layout constraints.
+            // img.width/img.height reflect the CSS size of the element (e.g. 120x120 from the
+            // preview container), so WebP images were computing aspect ratio as 1:1 and
+            // appeared stretched after the canvas re-draw.
+            let width  = img.naturalWidth  || img.width;
+            let height = img.naturalHeight || img.height;
 
             // Maintain aspect ratio while shrinking
             if (width > height) {
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                if (width > MAX_WIDTH) { height = Math.round(height * MAX_WIDTH / width); width = MAX_WIDTH; }
             } else {
-                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                if (height > MAX_HEIGHT) { width = Math.round(width * MAX_HEIGHT / height); height = MAX_HEIGHT; }
             }
 
             const canvas = document.createElement('canvas');
-            canvas.width = width;
+            canvas.width  = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            // 🚀 TRANSPARENCY FIX: Preserve PNGs, otherwise use JPEG
-            const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-            const compressedDataUrl = canvas.toDataURL(mimeType, 0.8);
-            callback(compressedDataUrl);        };
+            // Export as compressed JPEG (80% quality).
+            // canvas.toDataURL always works for JPEG/PNG regardless of input format,
+            // so WebP uploads are safely converted to JPEG here.
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            callback(compressedDataUrl);
+        };
         img.src = event.target.result;
     };
     reader.readAsDataURL(file);
