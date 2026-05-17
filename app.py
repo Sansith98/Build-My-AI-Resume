@@ -811,32 +811,44 @@ def _structure_from_form(form: Dict[str, Any]) -> Dict[str, Any]:
     # University education
     edu = []
     
-    types = form.get("eduType", []) or []
-    types = form.get("eduType", []) or []
-    unis = form.get("eduUniversity", []) or []
-    progs = form.get("eduProgram", []) or []
-    grades = form.get("eduGrade", []) or []
-    grades = form.get("eduGrade", []) or []
-    gpas = form.get("eduGPA", []) or []
-    theses = form.get("eduThesis", []) or []
-    fM = form.get("eduFromMonth", []) or []
-    fY = form.get("eduFromYear", []) or []
-    tM = form.get("eduToMonth", []) or []
-    tY = form.get("eduToYear", []) or []
-    research = form.get("eduResearch", []) or []
-    L = max(len(types),len(unis),len(progs),len(grades),len(gpas),len(theses),len(fM),len(fY),len(tM),len(tY),len(research))
+    # 🚀 NEW HELPER: Forces strings into lists so Python doesn't crash on single items!
+    def _ensure_list(val):
+        if val is None: return []
+        if isinstance(val, list): return val
+        return [val]
+
+    # ✅ FIXED: Using the helper to stop the TypeErrors
+    types = _ensure_list(form.get("eduType"))
+    unis = _ensure_list(form.get("eduUniversity"))
+    progs = _ensure_list(form.get("eduProgram"))
+    grades = _ensure_list(form.get("eduGrade"))
+    gpas = _ensure_list(form.get("eduGPA"))
+    theses = _ensure_list(form.get("eduThesis"))
+    fM = _ensure_list(form.get("eduFromMonth"))
+    fY = _ensure_list(form.get("eduFromYear"))
+    tM = _ensure_list(form.get("eduToMonth"))
+    tY = _ensure_list(form.get("eduToYear"))
+    research = _ensure_list(form.get("eduResearch"))
+    
+    L = max(len(types), len(unis), len(progs), len(grades), len(gpas), len(theses), len(fM), len(fY), len(tM), len(tY), len(research)) if any([types, unis, progs, grades, gpas, theses, fM, fY, tM, tY, research]) else 0
+    
     for i in range(L):
-        typ = (types+[""])[i]
-        uni = (unis+[""])[i]
-        prog = (progs+[""])[i]
+        typ = (types+[""])[i] if i < len(types) else ""
+        uni = (unis+[""])[i] if i < len(unis) else ""
+        prog = (progs+[""])[i] if i < len(progs) else ""
         grd = (grades+[""])[i] if i < len(grades) else ""
         gpa = (gpas+[""])[i] if i < len(gpas) else ""
         the = (theses+[""])[i] if i < len(theses) else ""
-        per = _period((fM+[""])[i], (fY+[""])[i], (tM+[""])[i], (tY+[""])[i])
+        per = _period(
+            (fM+[""])[i] if i < len(fM) else "", 
+            (fY+[""])[i] if i < len(fY) else "", 
+            (tM+[""])[i] if i < len(tM) else "", 
+            (tY+[""])[i] if i < len(tY) else ""
+        )
         # research (string -> list of bullet lines)
         res = (research + [""])[i] if i < len(research) else ""
         bullets = _to_str_list(res)
-
+        
         # prepend meta as bullets if present
         meta = []
         if the:  bullets.insert(0, f"Thesis: {the}")
@@ -853,11 +865,10 @@ def _structure_from_form(form: Dict[str, Any]) -> Dict[str, Any]:
             "gpa": gpa,
             "thesis": the,
             "period": per,
-            "research": bullets,  # <-- list (required for bullets repeater)
+            "research": bullets,
             "degree_name": prog or typ,
             "degree_and_type": f"{typ} — {prog}" if (typ and prog) else (prog or typ),
         }
-
 
         if any(v for v in item.values()):
             edu.append(item)

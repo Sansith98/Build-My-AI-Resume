@@ -3299,16 +3299,37 @@ async function previewInTemplate(){
         const uni = d.eduUniversity[i] || "";
         const prog = d.eduProgram[i] || "";
         const details = d.eduResearch[i] || "";
-        // 🚀 FIX: Skip empty blocks!
+        
         if (!uni.trim() && !prog.trim() && !details.trim()) continue;
 
         const from = `${getMonth(d.eduFromMonth[i])} ${d.eduFromYear[i] || ''}`.trim();
         const to = `${getMonth(d.eduToMonth[i])} ${d.eduToYear[i] || ''}`.trim();
+        
+        // 🚀 NEW FIX: GPA, Grade, and Thesis on SEPARATE lines!
+        let researchBullets = details ? details.split("\n").filter(l => l.trim()) : [];
+        let the = d.eduThesis ? (d.eduThesis[i] || "") : "";
+        let grd = d.eduGrade[i] || "";
+        let gpa = d.eduGPA[i] || "";
+        
+        // We use unshift in reverse order so they stack perfectly at the top!
+        if (the) researchBullets.unshift(`Thesis: ${the}`);
+        if (gpa) researchBullets.unshift(`GPA: ${gpa}`);
+        if (grd) researchBullets.unshift(`Grade: ${grd}`);
+
         d.education.push({
-          institution: uni,
-          degree: (d.eduType[i] || "") + " " + prog,
-          period: (from || to) ? `${from} – ${to}` : "",
-          details: details
+          university:      uni,
+          institution:     uni,
+          program:         prog,
+          type:            d.eduType[i] || "",
+          degree:          ((d.eduType[i] || "") + " " + prog).trim(),
+          degree_name:     prog || d.eduType[i] || "",
+          degree_and_type: (d.eduType[i] && prog) ? `${d.eduType[i]} — ${prog}` : (prog || d.eduType[i] || ""),
+          grade:           grd,
+          gpa:             gpa,
+          thesis:          the,
+          period:          (from || to) ? `${from} – ${to}` : "",
+          research:        researchBullets,
+          details:         details
         });
       }
 
