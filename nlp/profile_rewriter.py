@@ -114,10 +114,7 @@ def _compose_facts(form: Dict[str, Any], struct: Dict[str, Any]) -> Dict[str, An
         "sports": struct.get("sports", []),
         "job_description": (form.get("jobDescription") or "").strip(),
         "why_fit": (form.get("whyFit") or "").strip(),
-        "jd_keywords": _jd_keywords(form.get("jobDescription","")),
-        # Preserve the user's actual original profile text for Fix & Polish mode.
-        # struct["profile"] holds what was submitted before any AI rewrites.
-        "original_profile": (struct.get("profile") or "").strip(),
+        "jd_keywords": _jd_keywords(form.get("jobDescription",""))
     }
     return facts
 
@@ -231,21 +228,19 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
                  target_role: str, job_description: str,
                  forbid: List[str], seed: str, facts: Dict[str, Any], creative_tier: int) -> str:
     
-    # 🚀 TIER 1: SHORT-CIRCUIT. Only send the user's original profile text!
+    # 🚀 TIER 1: SHORT-CIRCUIT. Only send the user's original text!
     if creative_tier <= 1:
-        # Use the original profile text from facts, NOT the AI-generated scaffold.
-        # Scaffold is synthetic fallback content — proofreading it would replace
-        # the user's actual words with AI-invented sentences.
-        original_profile = (facts.get("original_profile") or "").strip()
-        input_text = original_profile if original_profile else (why_fit.strip() if why_fit.strip() else "")
         return json.dumps({
-            "instruction": "Fix grammar, spelling, and basic punctuation ONLY. Do not rewrite, restructure, or add any new facts, skills, or words.",
-            "input_text": input_text
+            "instruction": "Fix grammar, spelling, and basic punctuation ONLY. Do not rewrite or add facts.",
+            "input_text": why_fit if why_fit.strip() else " ".join(scaffold)
         }, ensure_ascii=False)
 
     # 🚀 TIERS 2 & 3: Normal Generation
+    # ✅ FIX: We now extract EVERYTHING so the AI knows your full career history!
     user_skills = facts.get("skills", [])
     user_edu = [e.get("program","") for e in facts.get("education", []) if e.get("program")]
+    user_work = [f"{w.get('title', '')} at {w.get('company', '')}" for w in facts.get("work", []) if w.get('title') or w.get('company')]
+    user_achievements = facts.get("achievements", [])
 
     style_notes = [
         "Professional, natural, global English",
@@ -254,7 +249,7 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
         "Keep it 3–5 sentences maximum, clean and ATS-friendly.",
         "Use FIRST-PERSON implied voice (no 'this individual', no 'he/she').",
         "Start with a clear professional identity based on the user’s background.",
-        "Include 4–7 concrete skills/tools pulled from the user data.",
+        "Include concrete skills, past job titles, and tools pulled from the user data.",
         "Prefer present-tense capability statements",
         "Avoid verb stacking and duplicate concepts",
         "Vary rhythm; avoid repetitive clauses",
@@ -264,7 +259,7 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
     if why_fit:
         style_notes.append(f"CRITICAL: The candidate explicitly stated why they fit this role: '{why_fit}'. You MUST heavily embed this specific value proposition and reasoning directly into the profile to impress the recruiter.")
     if job_description:
-        style_notes.append("CRITICAL: Align the tone, emphasis, and keywords of the profile to directly match the target job description.")
+        style_notes.append("CRITICAL: Align the tone, emphasis, and keywords of the profile to directly match the target job description. Connect the user's verified work history to the required job skills.")
 
     payload = {
         "instruction": {
@@ -280,7 +275,9 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
             },
             "user_data_highlights": {
                 "verified_skills": user_skills,
-                "verified_education": user_edu
+                "verified_education": user_edu,
+                "verified_work_history": user_work,          # <--- ADDED: AI now sees past jobs!
+                "verified_achievements": user_achievements   # <--- ADDED: AI now sees achievements!
             },
             "forbidden_openers": forbid,
             "seed": seed
@@ -288,7 +285,6 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
         "scaffold_sentences": scaffold
     }
     return json.dumps(payload, ensure_ascii=False)
-
 
 # ------------------------- Tier scaffolding ---------------------------
 
@@ -437,10 +433,7 @@ class ProfileRewriter:
                 prof = cleanup_paragraph(prof)
                 prof = proofread_paragraph(prof)
 
-                # For Fix & Polish (tier <= 1): accept any non-empty result (min=1).
-                # Requiring 3+ sentences would force retries that drift from the original text.
-                _min_sents = 1 if creative_tier <= 1 else (3 if creative_tier == 2 else 4)
-                ok, fixed = _validate(prof, max_sents, hard_cap, min_sentences=_min_sents)
+                ok, fixed = _validate(prof, max_sents, hard_cap, min_sentences=max(1, 1 if creative_tier==0 else (3 if creative_tier==1 else 4)))
                 if ok:
                     return fixed
 
@@ -481,12 +474,5 @@ class ProfileRewriter:
         
         if prof:
             return prof
-
-        # For Fix & Polish (tier <= 1), fall back to the original profile text as-is
-        # rather than the AI-generated scaffold, which would replace the user's words.
-        if creative_tier <= 1:
-            original = facts.get("original_profile", "")
-            if original:
-                return original
 
         return self._compose_fallback(scaffold, max_sents, hard_cap, min_sents)

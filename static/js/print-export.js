@@ -106,7 +106,6 @@
             </svg>
             Download PDF
           </button>
-          <button id="debugLayoutBtn" style="background: #374151; color: white; border: none; padding: 12px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">🐞 Debug</button>
       </div>
     `;
 
@@ -133,9 +132,13 @@
               </svg>
               Professional Grade (Recommended)
             </div>
-            <div class="export-opt-desc">High-fidelity vector rendering perfectly optimized for printing and ATS software. Delivers the sharpest text and graphics.</div>
+            <div class="export-opt-desc">
+              High-fidelity vector rendering perfectly optimized for printing and ATS software. Delivers the sharpest text and graphics.
+              <br><br>
+              <span style="color: #0ea5e9; font-weight: 600;"><i>Note: Includes a brief ad to keep this premium feature free!</i></span>
+            </div>
           </button>
-
+        
           <button class="export-opt-btn" id="modalStdExportBtn">
             <div class="export-opt-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -249,21 +252,7 @@
     }
   }
 
-  // ============================================================
-  // PLAYWRIGHT EXPORT
-  // PLAYWRIGHT EXPORT
-  // Collects full page HTML (with styles + fonts), saves it to
-  // the server via /api/save_export, then redirects to
-  // /export/hq-pdf/<eid> for server-side PDF generation.
-  // ============================================================
-// ============================================================
-  // PLAYWRIGHT EXPORT
-  // ============================================================
-// ============================================================
-// REPLACE the entire captureCurrentLayout() function in
-// print-export.js with this version.
-// Also replace triggerCustomPdfExport() with the version below.
-// ============================================================
+
 
 async function triggerCustomPdfExport() {
     const btn = document.getElementById("mainExportBtn");
@@ -1149,24 +1138,7 @@ async function captureCurrentLayout() {
         }
       });
 
-      // Fix shape backgrounds losing color & KEEP INDICATOR CURVES SHARP
-      clone.querySelectorAll('.shape-el, .background-shape').forEach(el => {
-        const className = el.className || "";
-        const bgColor = el.style.backgroundColor || el.style.background || el.getAttribute("fill");
-        
-        if (bgColor && bgColor !== "transparent" && bgColor !== "rgba(0, 0, 0, 0)") {
-          if (!className.includes('indicator') && !className.includes('bar') && !className.includes('line')) {
-            // Normal background shapes get the shadow fill
-            el.style.boxShadow = `0 0 0 1px ${bgColor}`;
-          } else {
-            // 🚀 BARS FIX: Use 'border' instead of outline to perfectly hug the curved corners
-            el.style.boxShadow = 'none'; 
-            el.style.outline = 'none';
-            el.style.border = `0.5px solid ${bgColor}`;
-            el.style.boxSizing = 'border-box';
-          }
-        }
-      });      
+      // Shape background enhancements removed.     
       printContainer.appendChild(clone);
     });
 
@@ -1190,16 +1162,9 @@ async function captureCurrentLayout() {
         -webkit-user-select: text !important;
       }
 
-      /* 🚀 2. RESTORED GLOW + MAXIMUM BRIGHTNESS (For White Text) */
+      /* 🚀 2. NORMAL WHITE TEXT (Enhancements Removed) */
       .a4 .print-white-text {
-          -webkit-text-stroke: 0px transparent !important;
           opacity: 1 !important;
-          
-          /* Restores that beautiful glowing aura! */
-          text-shadow: 
-              0px 0px 0px #ffffff, 
-              0px 0px 0px #ffffff, 
-              0px 0px 4px rgba(255, 255, 255, 0.9) !important;
       }
 
       /* 🚀 2.5 VECTOR GRAPHICS ENFORCEMENT */

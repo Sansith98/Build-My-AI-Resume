@@ -34,7 +34,6 @@ from flask import (
     Flask, jsonify, request, abort, send_file,
     render_template, url_for, make_response, send_from_directory, redirect, session, render_template_string
 )
-from playwright.sync_api import sync_playwright
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from dotenv import load_dotenv
@@ -3117,138 +3116,7 @@ def export_print(eid):
 </html>
 """
     return make_response(page, 200)
-@app.get("/export/hq-pdf/<eid>")
-def export_hq_pdf(eid):
-    import tempfile, re, os
-    from playwright.sync_api import sync_playwright
 
-    item         = _get_export_payload(eid)
-    html_content = item.get("html", "")
-    if isinstance(html_content, list):
-        html_content = "\n".join(html_content)
-
-
-    css_injection = """<style>
-      @page { size: 794px 1123px; margin: 0; }
-      html, body {
-        margin: 0 !important; padding: 0 !important;
-        background: #fff !important; width: 794px !important;
-        height: auto !important; overflow: visible !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-      }
-      .a4 {
-        page-break-after: always !important; break-after: page !important;
-        width: 794px !important; height: 1123px !important;
-        overflow: hidden !important; transform: none !important;
-        box-shadow: none !important; border: none !important;
-      }
-      
-      /* 🚀 THE ULTIMATE WILDCARD OVERRIDE (Now Font-Agnostic!) */
-      /* This targets EVERY element to add the stroke, but LEAVES their font-family alone! */
-      .a4 * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        text-rendering: geometricPrecision !important;
-        
-        /* Forces the micro-stroke onto EVERY letter of ANY font */
-        -webkit-text-stroke: 0.001px currentColor !important; 
-      }
-      
-      svg text, svg tspan { 
-          paint-order: stroke fill !important; 
-      }
-    </style>"""
-
-    if "<html" in html_content.lower():
-        final_html = re.sub(r'(?i)</head>', css_injection + '</head>', html_content)
-    else:
-        final_html = f"<!doctype html><html><head><meta charset='utf-8'/>{css_injection}</head><body>{html_content}</body></html>"
-
-    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    pdf_path = temp_pdf.name
-    temp_pdf.close()
-
-    app_domain = request.host
-
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--force-device-scale-factor=3',  # 🚀 FORCES RETINA/4K RESOLUTION
-                    '--enable-font-antialiasing',
-                    '--force-color-profile=srgb',
-                    '--font-render-hinting=none',     # 🚀 Fixes Linux kerning
-                    '--disable-web-security',
-                ]
-            )
-            context = browser.new_context(
-                viewport={"width": 794, "height": 1123},
-                device_scale_factor=3,                # 🚀 ALLOWS MICROSCOPIC 0.015px STROKES TO RENDER
-            )
-            page = context.new_page()
-
-            def intercept_route(route):
-                url = route.request.url
-                if "/static/" in url:
-                    try:
-                        fp = os.path.join(STATIC_DIR, url.split("/static/")[1].split("?")[0])
-                        if os.path.exists(fp):
-                            return route.fulfill(path=fp)
-                    except: pass
-                elif "/templates/" in url:
-                    try:
-                        fp = os.path.join(APP_TEMPLATES, url.split("/templates/")[1].split("?")[0])
-                        if os.path.exists(fp):
-                            return route.fulfill(path=fp)
-                    except: pass
-                
-                # Prevent self-deadlock
-                if app_domain in url or "127.0.0.1" in url or "localhost" in url:
-                    return route.abort()
-                
-                # 🚀 CRITICAL FIX: DO NOT abort googleapis. Let them load so ATS text parsing works!
-                route.continue_()
-
-            page.route("**/*", intercept_route)
-            page.set_content(final_html, wait_until="load", timeout=15000)
-
-            # Wait 3 seconds max for fonts
-            page.evaluate("""async () => {
-                await Promise.race([
-                    document.fonts.ready,
-                    new Promise(resolve => setTimeout(resolve, 3000))
-                ]);
-            }""")
-
-            page.emulate_media(media="screen")
-            page.pdf(
-                path=pdf_path,
-                width="794px",
-                height="1123px",
-                print_background=True,
-                margin={"top": "0px", "bottom": "0px", "left": "0px", "right": "0px"},
-                prefer_css_page_size=False,
-                scale=1.0
-            )
-            browser.close()
-
-        return send_file(
-            pdf_path,
-            as_attachment=True,
-            download_name=f"Resume_{eid}.pdf",
-            mimetype="application/pdf"
-        )
-    except Exception as e:
-        return f"Error generating PDF: {str(e)}", 500
-    finally:
-        try:
-            os.remove(pdf_path)
-        except:
-            pass
 
 # =============================================================================
 # SEO Routes (Robots & Sitemap)
@@ -3395,76 +3263,7 @@ def debug_layout():
                 "staticText": (el.get("options", {}).get("staticText") or "")[:40],
             })
     return jsonify(sample=sample)                   
-# =============================================================================
-# DEBUG: Check Playwright Network Font Loading
-# =============================================================================
-@app.route('/debug/playwright-fonts')
-def debug_playwright_fonts():
-    from playwright.sync_api import sync_playwright
-    import json
 
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-      </style>
-    </head>
-    <body>
-      <p style="font-family: 'Inter', sans-serif; font-weight: 700;">Testing Inter Font Loading</p>
-    </body>
-    </html>
-    """
-
-    font_network_traffic = []
-
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=['--disable-web-security']
-            )
-            page = browser.new_context().new_page()
-
-            # 🚀 SPY ON THE NETWORK: Catch every font file downloaded from Google
-            page.on(
-                "response", 
-                lambda response: font_network_traffic.append(response.url) 
-                if "fonts.gstatic.com" in response.url or "fonts.googleapis.com" in response.url 
-                else None
-            )
-
-            # Load the page and wait for the network to finish
-            page.set_content(html_content, wait_until="networkidle")
-
-            # 🚀 SPY ON THE DOM: Ask JavaScript if the fonts are actively loaded in memory
-            dom_fonts = page.evaluate("""() => {
-                return Array.from(document.fonts).map(f => {
-                    return { family: f.family, weight: f.weight, status: f.status };
-                });
-            }""")
-
-            browser.close()
-
-            # Format the output beautifully
-            html_out = "<h2>1. Network Traffic (Did Playwright reach Google?)</h2>"
-            if font_network_traffic:
-                html_out += "<ul>" + "".join([f"<li style='color:green;'>Downloaded: {url}</li>" for url in font_network_traffic]) + "</ul>"
-            else:
-                html_out += "<p style='color:red;'>FAILED: No network traffic to Google Fonts. Server might be blocking it!</p>"
-
-            html_out += "<h2>2. DOM Font Status (Are they actively applied to the text?)</h2>"
-            if dom_fonts:
-                html_out += "<ul>" + "".join([f"<li>Family: <b>{f['family']}</b> | Weight: {f['weight']} | Status: <span style='color:green;'>{f['status']}</span></li>" for f in dom_fonts]) + "</ul>"
-            else:
-                html_out += "<p style='color:red;'>FAILED: document.fonts is empty!</p>"
-
-            return html_out
-
-    except Exception as e:
-        return f"<h3>Error running Playwright:</h3><pre>{str(e)}</pre>"
 
         
 
