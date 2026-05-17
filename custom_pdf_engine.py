@@ -1208,17 +1208,40 @@ def _load_image(src: str):
     if not src:
         return None
     try:
+        from PIL import Image
+        import requests
+
+        img_bytes = None
+
+        # 1. Extract the raw bytes depending on the source
         if src.startswith("data:"):
             b64 = src.split(",", 1)[1]
             b64 += "=" * ((4 - len(b64) % 4) % 4)
-            return ImageReader(BytesIO(base64.b64decode(b64)))
-        if "/static/" in src:
+            img_bytes = base64.b64decode(b64)
+        elif "/static/" in src:
             local = src.split("/static/")[1].split("?")[0]
             path  = os.path.join(os.path.dirname(__file__), "static", local)
             if os.path.exists(path):
-                return ImageReader(path)
-        if src.startswith("http") and not src.startswith("blob:"):
-            return ImageReader(src)
+                with open(path, "rb") as f:
+                    img_bytes = f.read()
+        elif src.startswith("http") and not src.startswith("blob:"):
+            resp = requests.get(src, timeout=5)
+            if resp.status_code == 200:
+                img_bytes = resp.content
+
+        # 2. Use Pillow (PIL) to safely decode WEBP/PNG and map to RGB/RGBA
+        if img_bytes:
+            img = Image.open(BytesIO(img_bytes))
+            
+            # Preserve transparency if it exists, otherwise flatten to safe RGB
+            if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+                img = img.convert("RGBA")
+            else:
+                img = img.convert("RGB")
+                
+            # Passing a raw PIL Object skips ReportLab's buggy file parsers entirely!
+            return ImageReader(img)
+
     except Exception as e:
         print(f"[pdf_engine] Error loading image: {e}")
     return None

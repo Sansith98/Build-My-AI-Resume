@@ -999,7 +999,7 @@ async function captureCurrentLayout() {
     return layout;
 }
 
-  // ============================================================
+// ============================================================
   // BROWSER PRINT — Used by Standard and Browser HQ buttons
   // ============================================================
   function cleanPageForPrint(clone, mode) {
@@ -1022,50 +1022,10 @@ async function captureCurrentLayout() {
       clone.style.pageBreakInside = "avoid";
     }
 
-    // 🚀 NEW: Mathematical Color Scanner for "Near-White"
-    function isNearWhite(colorStr) {
-      if (!colorStr) return false;
-      const c = colorStr.toLowerCase().replace(/\s/g, '');
-      if (c === 'white') return true;
-      if (c === 'transparent' || c === 'none') return false;
-      
-      let r, g, b;
-      if (c.startsWith('#')) {
-        let hex = c.substring(1);
-        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-        if (hex.length >= 6) {
-          r = parseInt(hex.substring(0, 2), 16);
-          g = parseInt(hex.substring(2, 4), 16);
-          b = parseInt(hex.substring(4, 6), 16);
-        }
-      } else if (c.startsWith('rgb')) {
-        const match = c.match(/rgba?\((\d+),(\d+),(\d+)/);
-        if (match) {
-          r = parseInt(match[1]);
-          g = parseInt(match[2]);
-          b = parseInt(match[3]);
-        }
-      }
-      
-      // If Red, Green, and Blue are all above 225, it's in the white range
-      if (r !== undefined && g !== undefined && b !== undefined) {
-        return r > 225 && g > 225 && b > 225;
-      }
-      return false;
-    }
-
-    // Remove active selection highlights and SAFELY TAG NEAR-WHITE TEXT
+    // ONLY remove active selection highlights (No color scanning!)
     clone.querySelectorAll('*').forEach(el => {
       el.classList.remove("active", "multi", "editing");
       if (el.style.outline) el.style.outline = "none";
-
-      const tColor = el.style.color || "";
-      const tFill = el.getAttribute("fill") || "";
-      
-      // If it passes the math check, tag it
-      if (isNearWhite(tColor) || isNearWhite(tFill)) {
-          el.classList.add("print-white-text");
-      }
     });
 
     // Fix anti-aliasing white lines on background shapes
@@ -1086,31 +1046,6 @@ async function captureCurrentLayout() {
     printContainer.id = "bulletproof-print-container";
     printContainer.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; background: #fff; z-index: 999999999;";
 
-    // 🚀 Math Scanner for White Text Illumination
-    function isNearWhite(colorStr) {
-      if (!colorStr) return false;
-      const c = colorStr.toLowerCase().replace(/\s/g, '');
-      if (c === 'white') return true;
-      if (c === 'transparent' || c === 'none') return false;
-      let r, g, b;
-      if (c.startsWith('#')) {
-        let hex = c.substring(1);
-        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-        if (hex.length >= 6) {
-          r = parseInt(hex.substring(0, 2), 16);
-          g = parseInt(hex.substring(2, 4), 16);
-          b = parseInt(hex.substring(4, 6), 16);
-        }
-      } else if (c.startsWith('rgb')) {
-        const match = c.match(/rgba?\((\d+),(\d+),(\d+)/);
-        if (match) { r = parseInt(match[1]); g = parseInt(match[2]); b = parseInt(match[3]); }
-      }
-      if (r !== undefined && g !== undefined && b !== undefined) {
-        return r > 225 && g > 225 && b > 225;
-      }
-      return false;
-    }
-
     // 2. Clone pages and SCRUB all editor UI artifacts
     document.querySelectorAll('.a4').forEach(page => {
       const clone = page.cloneNode(true);
@@ -1129,16 +1064,8 @@ async function captureCurrentLayout() {
         if (el.classList.contains('handle') || el.classList.contains('g-handle') || el.classList.contains('guide')) {
             el.remove();
         }
-
-        // D. TAG WHITE TEXT: For our CSS illumination
-        const tColor = el.style.color || "";
-        const tFill = el.getAttribute("fill") || "";
-        if (isNearWhite(tColor) || isNearWhite(tFill)) {
-            el.classList.add("print-white-text");
-        }
       });
 
-      // Shape background enhancements removed.     
       printContainer.appendChild(clone);
     });
 
@@ -1162,12 +1089,7 @@ async function captureCurrentLayout() {
         -webkit-user-select: text !important;
       }
 
-      /* 🚀 2. NORMAL WHITE TEXT (Enhancements Removed) */
-      .a4 .print-white-text {
-          opacity: 1 !important;
-      }
-
-      /* 🚀 2.5 VECTOR GRAPHICS ENFORCEMENT */
+      /* 🚀 2. VECTOR GRAPHICS ENFORCEMENT */
       /* geometricPrecision keeps BOTH straight lines sharp AND rounded corners beautifully smooth */
       svg, img, hr, .shape-el, [class*="indicator"], [class*="bar"], [class*="line"], rect {
           shape-rendering: geometricPrecision !important;
@@ -1192,8 +1114,6 @@ async function captureCurrentLayout() {
         margin: 0 auto !important;
       }
 
-
-
       @page { 
         size: A4 portrait; 
         margin: 0 !important; 
@@ -1214,7 +1134,6 @@ async function captureCurrentLayout() {
       hideStyle.remove();
     }, 500);
   }
-
 
   // ============================================================
   // INIT
