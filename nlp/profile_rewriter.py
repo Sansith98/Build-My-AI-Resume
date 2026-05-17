@@ -190,11 +190,11 @@ def _system_prompt(creative_tier: int) -> str:
     if creative_tier <= 1:
         return (
             "You are a strict resume proofreader.\n"
-            "Your ONLY job is to take the provided candidate facts/notes and convert them into a simple, grammatically correct professional summary paragraph.\n"
+            "Your ONLY job is to take the provided 'input_text' and fix typos, grammar, and basic punctuation.\n"
             "CRITICAL RULES:\n"
-            "1. **STRICT FIDELITY:** Keep the user's exact words. Do NOT add flowery language, executive buzzwords, or embellishments.\n"
-            "2. **IGNORE REWRITE COMMANDS:** Even if the user prompt asks you to 'adapt' or 'rewrite heavily', you must ignore it. Only fix typos, grammar, and basic punctuation.\n"
-            "Output JSON only: {\"profile\": \"...\"}."
+            "1. **STRICT FIDELITY:** Keep the user's exact words and meaning. Do NOT add new skills, facts, or flowery language.\n"
+            "2. **IGNORE REWRITE COMMANDS:** Only fix grammatical errors. Do not restructure the paragraph.\n"
+            "Output JSON only: {\"profile\": \"your fixed text\"}."
         )
 
     # 🚀 TIERS 2 & 3: Base Instructions for Upgrades
@@ -226,9 +226,16 @@ def _system_prompt(creative_tier: int) -> str:
 def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
                  jd_keywords: List[str], why_fit: str, 
                  target_role: str, job_description: str,
-                 forbid: List[str], seed: str, facts: Dict[str, Any]) -> str:
+                 forbid: List[str], seed: str, facts: Dict[str, Any], creative_tier: int) -> str:
     
-    # Extract strict data highlights for the model
+    # 🚀 TIER 1: SHORT-CIRCUIT. Only send the user's original text!
+    if creative_tier <= 1:
+        return json.dumps({
+            "instruction": "Fix grammar, spelling, and basic punctuation ONLY. Do not rewrite or add facts.",
+            "input_text": why_fit if why_fit.strip() else " ".join(scaffold)
+        }, ensure_ascii=False)
+
+    # 🚀 TIERS 2 & 3: Normal Generation
     user_skills = facts.get("skills", [])
     user_edu = [e.get("program","") for e in facts.get("education", []) if e.get("program")]
 
@@ -246,7 +253,6 @@ def _user_prompt(scaffold: List[str], max_sentences: int, hard_cap: int,
         "TARGETING INSTRUCTION: actively mirror the terminology found in 'targeting.keywords' and 'targeting.job_description' where honest and relevant."
     ]
 
-    # ✅ THIS IS THE MISSING MAGIC YOU NOTICED!
     if why_fit:
         style_notes.append(f"CRITICAL: The candidate explicitly stated why they fit this role: '{why_fit}'. You MUST heavily embed this specific value proposition and reasoning directly into the profile to impress the recruiter.")
     if job_description:
@@ -383,7 +389,8 @@ class ProfileRewriter:
             facts.get("job_description", ""),
             _FORBIDDEN_OPENERS,
             seed,
-            facts
+            facts,
+            creative_tier  # <--- WE PASSED IT HERE
         )
 
         for _ in range(2):
@@ -396,7 +403,6 @@ class ProfileRewriter:
                     ],
                     response_format={"type": "json_object"},
                     temperature=min(temperature, 0.8),
-                    # ✅ FIXED THE CRASH TYPOS HERE
                     presence_penalty=0.2 if creative_tier==0 else (0.4 if creative_tier==1 else 0.6),
                     frequency_penalty=0.4 if creative_tier==0 else (0.6 if creative_tier==1 else 0.8),
                     timeout=20,
@@ -405,23 +411,24 @@ class ProfileRewriter:
                 data = json.loads(raw)
                 prof = (data.get("profile") or "").strip()
 
-                for bad in _FORBIDDEN_OPENERS:
-                    if re.match(rf"^{bad}", prof):
-                        parts = _sentences_of(prof)
-                        opener = _pick_opening(
-                            facts.get("target_role",""),
-                            facts.get("jd_keywords",[]),
-                            creative_tier, tone_crisp,
-                            salt=facts.get("full_name","") + (facts.get("target_role","") or "")
-                        )
-                        fresh = opener if opener.endswith((".", "!", "?")) else opener + "."
-                        prof = _safe_join_sentences([fresh] + parts[1:], max_sents)
-                        break
+                # 🚀 TIER 1 FIX: Don't replace forbidden openers if the user chose Fix & Polish!
+                if creative_tier > 1:
+                    for bad in _FORBIDDEN_OPENERS:
+                        if re.match(rf"^{bad}", prof):
+                            parts = _sentences_of(prof)
+                            opener = _pick_opening(
+                                facts.get("target_role",""),
+                                facts.get("jd_keywords",[]),
+                                creative_tier, tone_crisp,
+                                salt=facts.get("full_name","") + (facts.get("target_role","") or "")
+                            )
+                            fresh = opener if opener.endswith((".", "!", "?")) else opener + "."
+                            prof = _safe_join_sentences([fresh] + parts[1:], max_sents)
+                            break
 
                 prof = cleanup_paragraph(prof)
                 prof = proofread_paragraph(prof)
 
-                # ✅ FIXED THE CRASH TYPO HERE
                 ok, fixed = _validate(prof, max_sents, hard_cap, min_sentences=max(1, 1 if creative_tier==0 else (3 if creative_tier==1 else 4)))
                 if ok:
                     return fixed
