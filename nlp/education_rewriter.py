@@ -18,12 +18,14 @@ def _tier_targets(length_tier: int) -> Tuple[int, int]:
     return (4, 80)
 
 def _system_prompt(creative_tier: int) -> str:
+    # 🚀 TIER 1: FIX & POLISH (Strict Proofreader)
     if creative_tier <= 1:
         return (
-            "Rewrite the following EDUCATION details to fix grammar and formatting. Keep it crisp and concise.\n"
-            "CRITICAL: **STRICT FIDELITY.**\n"
-            "- Do not invent coursework or projects.\n"
-            "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
+            "You are a strict proofreader. Your ONLY job is to fix grammar, spelling, and punctuation for the following EDUCATION details.\n"
+            "CRITICAL RULES:\n"
+            "1. **STRICT FIDELITY:** Keep the user's exact words and formatting as much as possible. Only fix obvious errors.\n"
+            "2. **NO ENHANCEMENTS:** Do not invent, rewrite, or enhance coursework or projects.\n"
+            "Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     elif creative_tier <= 3:
         return (
@@ -37,7 +39,6 @@ def _system_prompt(creative_tier: int) -> str:
             "- Output JSON strictly in this format: {\"text\": \"your rewritten text\"}"
         )
     else:
-        # Toned down "massively expand" to just "EXPAND"
         return (
             "Rewrite and EXPAND the EDUCATION details into highly professional, detailed descriptions.\n"
             "INVENTIVE RULES:\n"

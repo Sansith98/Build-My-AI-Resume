@@ -64,9 +64,18 @@ def _guess_domain(title: str, company: str = "", bullets: List[str] = None) -> s
     return "generic"
 
 # 2. CONTROLS TRUTH (Creativity Slider)
-# 2. CONTROLS TRUTH (Creativity Slider)
 def _system_prompt(creative_tier: int) -> str:
-    # Base Instructions (Always Active - Now includes the Number Ban!)
+    # 🚀 TIER 1: FIX & POLISH (Strict Proofreader)
+    if creative_tier <= 1:
+        return (
+            "You are a strict resume proofreader. Your ONLY job is to fix grammar, spelling, and basic punctuation.\n"
+            "CRITICAL RULES:\n"
+            "1. **STRICT FIDELITY:** Keep the user's exact words and sentence structure. Do NOT rewrite or restructure the sentence.\n"
+            "2. **NO ENHANCEMENTS:** Do NOT add new vocabulary, action verbs, or fake metrics. Just fix typos.\n"
+            "Output JSON strictly in this format: {\"bullets\": [ \"bullet 1\", \"bullet 2\" ]}."
+        )
+
+    # 🚀 TIERS 2 & 3: Base Instructions for Upgrades
     base = (
         "You are an expert resume bullet editor. Rewrite each bullet FULLY with new wording.\n"
         "STYLE GUIDELINES:\n"
@@ -78,15 +87,7 @@ def _system_prompt(creative_tier: int) -> str:
         "- **NO FAKE NUMBERS:** You are strictly forbidden from inventing metrics, percentages, or financial figures. If the user did not provide a number, focus entirely on the qualitative scope and operational impact.\n"
     )
 
-    # Dynamic Rules based on Creativity Slider
-    if creative_tier <= 1:
-        return base + (
-            "CRITICAL RULES:\n"
-            "1. **STRICT TRUTH:** Do NOT invent tools or outcomes. Use ONLY what is provided.\n"
-            "2. **NO HALLUCINATIONS:** If the input says 'Fixed bug', do NOT add 'using React' unless specified.\n"
-            "Output JSON strictly in this format: {\"bullets\": [ \"bullet 1\", \"bullet 2\" ]}."
-        )
-    elif creative_tier <= 3:
+    if creative_tier <= 3:
         return base + (
             "CREATIVE RULES:\n"
             "1. **INFER CONTEXT:** If the job description mentions specific tools and the user has a matching role, you may imply familiarity.\n"
